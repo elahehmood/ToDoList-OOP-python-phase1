@@ -20,8 +20,6 @@ def handle_project_management(manager: TodoListManager):
             create_project_cli(manager)
         elif choice == '2':
             list_projects_cli(manager)
-        # elif choice == '3': # Edit Project (Will be added later)
-        # elif choice == '4': # Delete Project (Will be added later)
         elif choice == '9':
             break
         else:
@@ -36,7 +34,7 @@ def create_project_cli(manager: TodoListManager):
     project: Project | None = manager.create_project(name, desc)
     
     if project:
-        print(f"✅ Project '{project.name}' created successfully with ID: {project.id}")
+        print(f"Project '{project.name}' created successfully with ID: {project.id}")
     else:
         # Error message is printed by the service layer
         pass
