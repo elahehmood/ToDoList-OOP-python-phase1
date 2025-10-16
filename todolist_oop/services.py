@@ -46,3 +46,16 @@ class TodoListManager:
         project = Project(name, description)
         self.projects.append(project)
         return project
+    
+    def list_projects(self):
+        """Displays a list of all projects (AC: sorted by creation time)."""
+        if not self.projects:
+            print("No projects to display.")
+            return
+
+        # Sort by creation time (ascending)
+        sorted_projects = sorted(self.projects, key=lambda p: p.created_at)
+        
+        print("\n--- Project List ---")
+        for p in sorted_projects:
+            print(f"ID: {p.id} | Name: {p.name} | Description: {p.description}")
