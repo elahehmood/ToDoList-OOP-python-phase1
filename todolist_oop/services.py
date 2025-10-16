@@ -14,3 +14,10 @@ class TodoListManager:
         self.max_projects: int = int(os.getenv("MAX_PROJECTS", 10))
         self.max_tasks: int = int(os.getenv("MAX_TASKS_PER_PROJECT", 20))
     
+    def find_project(self, project_id: str) -> Project | None:
+        """Finds a project by its ID."""
+        for project in self.projects:
+            if project.id == project_id:
+                return project
+            
+        return None
