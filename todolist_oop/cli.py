@@ -68,10 +68,40 @@ def print_main_menu():
     print("2. Task Management")
     print("0. Exit")
 
-# Placeholder for Task Management (will be implemented later)
+def add_task_cli(manager: TodoListManager):
+    """Handles user input for adding a task to a project."""
+    print("\n--- Add Task ---")
+    manager.list_projects() # Optional: Show projects for user reference
+    project_id = input("Enter the project ID to add a task to: ").strip()
+    
+    # Check if project exists before prompting for task details (better UX)
+    if not manager.find_project(project_id):
+        # find_project prints the error message
+        return
+        
+    title = input("Task title (max 30): ")
+    desc = input("Task description (max 150): ")
+    deadline = input("Deadline (optional, format YYYY-MM-DD): ")
+    
+    manager.add_task_to_project(project_id, title, desc, deadline)
+  
 def handle_task_management(manager: TodoListManager):
     """Handles the task management submenu interactions."""
-    print("Task management is not yet implemented.")
+    while True:
+        print_task_menu()
+        choice = input("Your choice: ")
+        
+        if choice == '1':
+            add_task_cli(manager) # <--- NEW HANDLER
+        elif choice == '2':
+            list_tasks_cli(manager) # <--- NEW HANDLER
+        elif choice == '3':
+            update_task_status_cli(manager) # <--- NEW HANDLER
+        # Options 4, 5 will be added later
+        elif choice == '9':
+            break
+        else:
+            print("Invalid choice!")
 
 def run_cli():
     """The main application loop."""
