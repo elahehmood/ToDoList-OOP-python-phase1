@@ -112,4 +112,4 @@ class TodoListManager:
             return True
         else:
             print("Info: No changes were made (input fields were empty or identical to current values).")
-            return True # Still return True as the operation was successful 
+            return True # Still return True as the operation was succesful
