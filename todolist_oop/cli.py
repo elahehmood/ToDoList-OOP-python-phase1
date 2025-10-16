@@ -19,6 +19,10 @@ def handle_project_management(manager: TodoListManager):
             create_project_cli(manager)
         elif choice == '2':
             list_projects_cli(manager)
+        elif choice == '3':
+            manager.list_projects() # addition for better UX
+            project_id = input("Enter the ID of the project to delete: ")
+            manager.delete_project(project_id)   
         elif choice == '9':
             break
         else:
