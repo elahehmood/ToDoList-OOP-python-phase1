@@ -9,6 +9,32 @@ def print_project_menu():
     print("4. Delete a project")
     print("9. Back to Main Menu")
 
+def edit_project_cli(manager: TodoListManager):
+    """Handles the user interaction for editing a project."""
+    manager.list_projects() # Show list for user reference
+    
+    print("\n--- Edit Project ---")
+    project_id = input("Enter the ID of the project to edit: ").strip()
+    
+    if not project_id:
+        print("Error: Project ID cannot be empty.")
+        return
+
+    # Check if project exists to display current values (better UX)
+    project = manager.find_project(project_id)
+    if not project:
+        # Error message printed by find_project
+        return
+
+    print(f"\n--- Editing Project: '{project.name}' (Current Name/Description) ---")
+    print("Note: Leave fields blank to keep the current value (max 30/150 chars).")
+    
+    new_name = input(f"New Name (Current: {project.name}): ")
+    new_description = input(f"New Description (Current: {project.description}): ")
+
+    # Call the service layer method
+    manager.edit_project(project_id, new_name, new_description)
+
 def handle_project_management(manager: TodoListManager):
     """Handles the project management submenu interactions."""
     while True:
