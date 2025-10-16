@@ -68,3 +68,48 @@ class TodoListManager:
             return True
         # NOTE: find_project already prints "Error: Project with this ID not found."
         return False
+    
+    def edit_project(self, project_id: str, new_name: str, new_description: str) -> bool:
+        """
+        Finds a project by ID and updates its name and description (US-2).
+        AC: Observes length limits, checks for name uniqueness, and updates only non-empty fields.
+        """
+        project = self.find_project(project_id)
+        if not project:
+            return False  # find_project prints the error message
+
+        # 1. Prepare inputs
+        new_name = new_name.strip()
+        new_description = new_description.strip()
+        
+        updated = False
+
+        # 2. Check and update Name 
+        if new_name and new_name != project.name:
+            if len(new_name) > 30:
+                print("Error: New project name exceeds 30 characters.")
+                return False
+            
+            # Check uniqueness for the new name against all OTHER projects
+            if any(p.name == new_name and p.id != project_id for p in self.projects):
+                print("Error: A project with this new name already exists.")
+                return False
+                
+            project.name = new_name
+            updated = True
+
+        # 3. Check and update Description 
+        if new_description and new_description != project.description:
+            if len(new_description) > 150:
+                print("Error: New project description exceeds 150 characters.")
+                return False
+            
+            project.description = new_description
+            updated = True
+            
+        if updated:
+            print(f"Project '{project.name}' updated successfully.")
+            return True
+        else:
+            print("Info: No changes were made (input fields were empty or identical to current values).")
+            return True # Still return True as the operation was successful 
