@@ -84,7 +84,14 @@ def add_task_cli(manager: TodoListManager):
     deadline = input("Deadline (optional, format YYYY-MM-DD): ")
     
     manager.add_task_to_project(project_id, title, desc, deadline)
-  
+
+def list_tasks_cli(manager: TodoListManager):
+    """Handles the user interaction for listing tasks in a project (US-9)."""
+    print("\n--- List Tasks ---")
+    manager.list_projects()
+    project_id = input("Enter the project ID to list its tasks: ").strip()
+    manager.list_tasks_in_project(project_id)
+
 def handle_task_management(manager: TodoListManager):
     """Handles the task management submenu interactions."""
     while True:
