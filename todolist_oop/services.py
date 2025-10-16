@@ -1,4 +1,3 @@
-# todolist_oop/services.py
 import os
 from dotenv import load_dotenv
 from .models import Project, Task 

@@ -1,4 +1,3 @@
-# todolist_oop/cli.py
 from .services import TodoListManager
 from .models import Project
 
@@ -39,4 +38,34 @@ def create_project_cli(manager: TodoListManager):
         # Error message is printed by the service layer
         pass
 
+# todolist_oop/cli.py
+# ... (all previous code)
+
+def print_main_menu():
+    print("\n===== ToDoList - Main Menu =====")
+    print("1. Project Management")
+    print("2. Task Management")
+    print("0. Exit")
+
+# Placeholder for Task Management (will be implemented later)
+def handle_task_management(manager: TodoListManager):
+    """Handles the task management submenu interactions."""
+    print("Task management is not yet implemented.")
+
+def run_cli():
+    """The main application loop."""
+    manager = TodoListManager()
+    while True:
+        print_main_menu()
+        choice = input("Your choice: ")
+
+        if choice == '1':
+            handle_project_management(manager)
+        elif choice == '2':
+            handle_task_management(manager)
+        elif choice == '0':
+            print("Goodbye!")
+            break
+        else:
+            print("Invalid choice. Please try again.")
 

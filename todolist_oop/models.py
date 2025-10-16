@@ -1,4 +1,3 @@
-# todolist_oop/models.py
 import uuid
 from datetime import datetime
 
