@@ -68,3 +68,103 @@ class TodoListManager:
             return True
         # NOTE: find_project already prints "Error: Project with this ID not found."
         return False
+
+    # todolist_oop/services.py (inside class TodoListManager)
+
+    def edit_project(self, project_id: str, new_name: str, new_description: str) -> bool:
+        """
+        Finds a project by ID and updates its name and description (US-2).
+        AC: Observes length limits, checks for name uniqueness, and updates only non-empty fields.
+        """
+        project = self.find_project(project_id)
+        if not project:
+            return False
+
+        new_name = new_name.strip()
+        new_description = new_description.strip()
+        updated = False
+
+        # Update Name
+        if new_name and new_name != project.name:
+            if len(new_name) > 30:
+                print("Error: New project name exceeds 30 characters.")
+                return False
+            if any(p.name == new_name and p.id != project_id for p in self.projects):
+                print("Error: A project with this new name already exists.")
+                return False
+            project.name = new_name
+            updated = True
+
+        # Update Description
+        if new_description and new_description != project.description:
+            if len(new_description) > 150:
+                print("Error: New project description exceeds 150 characters.")
+                return False
+            project.description = new_description
+            updated = True
+
+        if updated:
+            print(f"✅ Project '{project.name}' updated successfully.")
+            return True
+        print("Info: No changes were made.")
+        return True # Successful operation even if nothing changed
+    
+    def edit_task(self, project_id: str, task_id: str, 
+                  new_title: str, new_description: str, 
+                  new_deadline: str, new_status: str) -> bool:
+        """
+        Edits the details (title, description, deadline, status) of a specific task (US-6).
+        AC: Checks length limits, valid date format, and valid status.
+        Only updates non-empty fields.
+        """
+        task = self.find_task_in_project(project_id, task_id)
+        if not task:
+            # Error message printed by find_task_in_project
+            return False
+
+        updated = False
+        valid_statuses = ["todo", "doing", "done"]
+
+        # 1. Update Title (if provided)
+        if new_title.strip():
+            if len(new_title.strip()) > 30:
+                print("Error: New task title exceeds 30 characters.")
+                return False
+            task.title = new_title.strip()
+            updated = True
+
+        # 2. Update Description (if provided)
+        if new_description.strip():
+            if len(new_description.strip()) > 150:
+                print("Error: New task description exceeds 150 characters.")
+                return False
+            task.description = new_description.strip()
+            updated = True
+
+        # 3. Update Deadline (if provided)
+        if new_deadline.strip():
+            try:
+                # Validate date format
+                from datetime import datetime
+                datetime.strptime(new_deadline.strip(), '%Y-%m-%d')
+                task.deadline = new_deadline.strip()
+                updated = True
+            except ValueError:
+                print("Error: Invalid deadline format. Please use YYYY-MM-DD.")
+                return False
+        
+        # 4. Update Status (if provided)
+        if new_status.strip():
+            new_status_lower = new_status.strip().lower()
+            if new_status_lower not in valid_statuses:
+                print(f"Error: Invalid status. Allowed statuses are: {valid_statuses}")
+                return False
+            task.status = new_status_lower
+            updated = True
+
+        if updated:
+            print(f"✅ Task '{task.title}' updated successfully.")
+            return True
+        
+        print("Info: No changes were made (input fields were empty).")
+        return True

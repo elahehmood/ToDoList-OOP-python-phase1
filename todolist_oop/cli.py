@@ -22,7 +22,9 @@ def handle_project_management(manager: TodoListManager):
         elif choice == '3':
             manager.list_projects() # addition for better UX
             project_id = input("Enter the ID of the project to delete: ")
-            manager.delete_project(project_id)   
+            manager.delete_project(project_id) 
+        elif choice == '4': 
+            edit_project_cli(manager)      
         elif choice == '9':
             break
         else:
@@ -42,8 +44,23 @@ def create_project_cli(manager: TodoListManager):
         # Error message is printed by the service layer
         pass
 
-# todolist_oop/cli.py
-# ... (all previous code)
+def edit_project_cli(manager: TodoListManager):
+    """Handles the user interaction for editing a project."""
+    manager.list_projects()
+    print("\n--- Edit Project ---")
+    project_id = input("Enter the ID of the project to edit: ").strip()
+
+    project = manager.find_project(project_id)
+    if not project:
+        return
+
+    print(f"\n--- Editing Project: '{project.name}' (Current Name/Description) ---")
+    print("Note: Leave fields blank to keep the current value (max 30/150 chars).")
+
+    new_name = input(f"New Name (Current: {project.name}): ")
+    new_description = input(f"New Description (Current: {project.description}): ")
+
+    manager.edit_project(project_id, new_name, new_description)
 
 def print_main_menu():
     print("\n===== ToDoList - Main Menu =====")
