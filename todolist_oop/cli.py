@@ -92,6 +92,22 @@ def list_tasks_cli(manager: TodoListManager):
     project_id = input("Enter the project ID to list its tasks: ").strip()
     manager.list_tasks_in_project(project_id)
 
+def update_task_status_cli(manager: TodoListManager):
+    """Handles the user interaction for changing a task's status (US-5)."""
+    print("\n--- Change Task Status ---")
+    manager.list_projects()
+    project_id = input("Project ID containing the task: ").strip()
+    
+    # Optional: List tasks in project for user reference
+    project = manager.find_project(project_id)
+    if project:
+        manager.list_tasks_in_project(project_id)
+    
+    task_id = input("Task ID to update: ").strip()
+    status = input("New status (todo, doing, done): ").strip().lower()
+    
+    manager.update_task_status(project_id, task_id, status)
+
 def handle_task_management(manager: TodoListManager):
     """Handles the task management submenu interactions."""
     while True:
@@ -99,11 +115,11 @@ def handle_task_management(manager: TodoListManager):
         choice = input("Your choice: ")
         
         if choice == '1':
-            add_task_cli(manager) # <--- NEW HANDLER
+            add_task_cli(manager) 
         elif choice == '2':
-            list_tasks_cli(manager) # <--- NEW HANDLER
+            list_tasks_cli(manager) 
         elif choice == '3':
-            update_task_status_cli(manager) # <--- NEW HANDLER
+            update_task_status_cli(manager) 
         # Options 4, 5 will be added later
         elif choice == '9':
             break
