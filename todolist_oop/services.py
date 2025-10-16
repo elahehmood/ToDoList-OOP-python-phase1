@@ -58,3 +58,13 @@ class TodoListManager:
         print("\n--- Project List ---")
         for p in sorted_projects:
             print(f"ID: {p.id} | Name: {p.name} | Description: {p.description}")
+    
+    def delete_project(self, project_id: str) -> bool:
+        """Deletes a project and all its tasks (Cascade Delete)."""
+        project = self.find_project(project_id)
+        if project:
+            self.projects.remove(project)
+            print(f"Project '{project.name}' and all its tasks were deleted successfully.")
+            return True
+        # NOTE: find_project already prints "Error: Project with this ID not found."
+        return False
