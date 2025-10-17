@@ -19,8 +19,9 @@ class TodoListManager:
         for project in self.projects:
             if project.id == project_id:
                 return project
-            
+            print(f"Error: Project with ID '{project_id}' not found.")
         return None
+        
     
     def create_project(self, name: str, description: str) -> Project | None:
         """Creates a new project (AC: limit checks, unique name)."""
