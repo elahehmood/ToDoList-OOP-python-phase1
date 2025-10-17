@@ -220,3 +220,19 @@ class TodoListManager:
         
         print(f"Error: Task with ID '{task_id}' not found in this project.")
         return False
+    
+    def list_tasks_in_project(self, project_id: str):
+        """Displays a list of all tasks in a specific project (US-9)."""
+        project = self.find_project(project_id)
+        if not project:
+            # find_project prints the error message
+            return
+
+        if not project.tasks:
+            print(f"Project '{project.name}' has no tasks.")
+            return
+
+        print(f"\n--- Tasks in Project: {project.name} ---")
+        for t in project.tasks:
+            deadline_str = t.deadline if t.deadline else "Not set"
+            print(f"ID: {t.id} | Title: {t.title} | Status: {t.status} | Deadline: {deadline_str}")
