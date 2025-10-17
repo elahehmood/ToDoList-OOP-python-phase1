@@ -138,25 +138,25 @@ def update_task_status_cli(manager: TodoListManager):
     
     manager.update_task_status(project_id, task_id, status)
 
+
 def edit_task_cli(manager: TodoListManager):
     """Handles the user interaction for editing a task (US-6)."""
     print("\n--- Edit Task ---")
     manager.list_projects()
     project_id = input("Project ID containing the task: ").strip()
-    project = manager.find_project(project_id)    
-  
+    project = manager.find_project(project_id)
     if not project:
-        # find_project printed ERROR massage
         return
-    # if project have found shows the list of tasks of project 
+    
+    # Show tasks for better UX
     manager.list_tasks_in_project(project_id)
     
+    # if there is no task return
     if not project.tasks:
-        # massage "Project 'P2' has no tasks." have printed by list_tasks_in_project 
         return
     
     task_id = input("Task ID to edit: ").strip()
-
+    
     print("\nNote: Leave fields blank to keep current value.")
     new_title = input("New Title (max 30): ")
     new_description = input("New Description (max 150): ")

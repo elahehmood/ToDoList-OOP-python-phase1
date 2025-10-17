@@ -111,7 +111,7 @@ class TodoListManager:
         print("Info: No changes were made.")
         return True            
 
-    def edit_task(self, project_id: str, task_id: str, 
+    def edit_task(self, project: Project, task_id: str, 
                   new_title: str, new_description: str, 
                   new_deadline: str, new_status: str) -> bool:
         """
@@ -119,7 +119,9 @@ class TodoListManager:
         AC: Checks length limits, valid date format, and valid status.
         Only updates non-empty fields.
         """
-        task = self.find_task_in_project(project_id, task_id)
+        
+        task = self.find_task_in_project(project.id, task_id)
+
         if not task:
             # Error message printed by find_task_in_project
             return False
@@ -170,6 +172,7 @@ class TodoListManager:
         
         print("Info: No changes were made (input fields were empty).")
         return True
+    
 
     def add_task_to_project(self, project_id: str, title: str, description: str, deadline: str = None) -> Task | None:
         """
