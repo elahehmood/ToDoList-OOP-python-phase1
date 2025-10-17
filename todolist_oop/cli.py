@@ -134,6 +134,12 @@ def update_task_status_cli(manager: TodoListManager):
         return
     
     task_id = input("Task ID to update: ").strip()
+
+    task_to_update = manager.find_task_in_project(project_id, task_id)
+    if not task_to_update:
+        # if there is no task id with id inputed find_task_in_project print Error 
+        return
+
     status = input("New status (todo, doing, done): ").strip().lower()
     
     manager.update_task_status(project_id, task_id, status)
@@ -157,6 +163,11 @@ def edit_task_cli(manager: TodoListManager):
     
     task_id = input("Task ID to edit: ").strip()
     
+    task_to_edit = manager.find_task_in_project(project_id, task_id)
+    if not task_to_edit:
+        # if there is no task id with id inputed find_task_in_project print Error
+        return
+
     print("\nNote: Leave fields blank to keep current value.")
     new_title = input("New Title (max 30): ")
     new_description = input("New Description (max 150): ")
