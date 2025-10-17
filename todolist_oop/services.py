@@ -19,7 +19,7 @@ class TodoListManager:
         for project in self.projects:
             if project.id == project_id:
                 return project
-            print(f"Error: Project with ID '{project_id}' not found.")
+        print(f"Error: Project with ID '{project_id}' not found.")
         return None
         
     
@@ -220,6 +220,7 @@ class TodoListManager:
         print(f"Error: Task with ID '{task_id}' not found in this project.")
         return False
     
+    # Helper method for all task-related operations
     def find_task_in_project(self, project_id: str, task_id: str) -> Task | None:
         """Finds a specific task within a specific project."""
         project = self.find_project(project_id)
@@ -231,6 +232,23 @@ class TodoListManager:
             return None
         # find_project prints the error message if project is not found
         return None
+
+    def list_tasks_in_project(self, project_id: str):
+        """Displays a list of all tasks in a specific project (US-9)."""
+        project = self.find_project(project_id)
+        if not project:
+            # find_project prints the error message
+            return
+
+        if not project.tasks:
+            print(f"Project '{project.name}' has no tasks.")
+            return
+
+        print(f"\n--- Tasks in Project: {project.name} ---")
+        for t in project.tasks:
+            deadline_str = t.deadline if t.deadline else "Not set"
+            # Display ID, Title, Status, and Deadline
+            print(f"ID: {t.id} | Title: {t.title} | Status: {t.status} | Deadline: {deadline_str}")
     
     def update_task_status(self, project_id: str, task_id: str, status: str) -> bool:
         """Updates the status of a specific task (US-5)."""
