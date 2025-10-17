@@ -104,7 +104,7 @@ class TodoListManager:
             updated = True
 
         if updated:
-            print(f"✅ Project '{project.name}' updated successfully.")
+            print(f" Project '{project.name}' updated successfully.")
             return True
         print("Info: No changes were made.")
         return True # Successful operation even if nothing changed
@@ -163,7 +163,7 @@ class TodoListManager:
             updated = True
 
         if updated:
-            print(f"✅ Task '{task.title}' updated successfully.")
+            print(f" Task '{task.title}' updated successfully.")
             return True
         
         print("Info: No changes were made (input fields were empty).")
