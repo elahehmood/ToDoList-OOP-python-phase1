@@ -71,15 +71,11 @@ class TodoListManager:
         # NOTE: find_project already prints "Error: Project with this ID not found."
         return False
 
-    def edit_project(self, project_id: str, new_name: str, new_description: str) -> bool:
+    def edit_project(self, project: Project, new_name: str, new_description: str) -> bool:
         """
-        Finds a project by ID and updates its name and description (US-2).
+        Updates the project's name and description (US-2).
         AC: Observes length limits, checks for name uniqueness, and updates only non-empty fields.
         """
-        project = self.find_project(project_id)
-        if not project:
-            return False
-
         new_name = new_name.strip()
         new_description = new_description.strip()
         updated = False
@@ -89,7 +85,8 @@ class TodoListManager:
             if len(new_name) > 30:
                 print("Error: New project name exceeds 30 characters.")
                 return False
-            if any(p.name == new_name and p.id != project_id for p in self.projects):
+            
+            if any(p.name == new_name and p.id != project.id for p in self.projects):
                 print("Error: A project with this new name already exists.")
                 return False
             project.name = new_name
@@ -109,6 +106,7 @@ class TodoListManager:
         print("Info: No changes were made.")
         return True # Successful operation even if nothing changed
     
+
     def edit_task(self, project_id: str, task_id: str, 
                   new_title: str, new_description: str, 
                   new_deadline: str, new_status: str) -> bool:
