@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+from datetime import datetime
 from .models import Project, Task 
 
 # Load environment variables from .env file
@@ -68,8 +69,6 @@ class TodoListManager:
             return True
         # NOTE: find_project already prints "Error: Project with this ID not found."
         return False
-
-    # todolist_oop/services.py (inside class TodoListManager)
 
     def edit_project(self, project_id: str, new_name: str, new_description: str) -> bool:
         """
@@ -168,3 +167,56 @@ class TodoListManager:
         
         print("Info: No changes were made (input fields were empty).")
         return True
+
+    def add_task_to_project(self, project_id: str, title: str, description: str, deadline: str = None) -> Task | None:
+        """
+        Adds a new task to a specific project (US-4).
+        AC: Checks limits, string lengths (title<=30, desc<=150), valid deadline.
+        """
+        project = self.find_project(project_id)
+        if not project:
+            return None # find_project prints error
+
+        # 1. Check MAX_NUMBER_OF_TASK limit
+        if len(project.tasks) >= self.max_tasks:
+            print(f"Error: This project has reached the maximum limit of {self.max_tasks} tasks.")
+            return None
+
+        # 2. Check Title and Description length (AC)
+        if len(title.strip()) > 30:
+            print("Error: Task title exceeds 30 characters.")
+            return None
+        if len(description.strip()) > 150:
+            print("Error: Task description exceeds 150 characters.")
+            return None
+
+        # 3. Check Deadline validity (AC)
+        if deadline:
+            try:
+                # Attempt to parse the date to validate it, then convert back to string if needed
+                datetime.strptime(deadline, '%Y-%m-%d') 
+            except ValueError:
+                print("Error: Invalid deadline format. Please use YYYY-MM-DD.")
+                return None
+
+        # 4. Create and add Task
+        task = Task(title.strip(), description.strip(), deadline)
+        project.tasks.append(task)
+        print(f"Task '{title.strip()}' was successfully added to project '{project.name}'.")
+        return task
+
+    def delete_task(self, project_id: str, task_id: str) -> bool:
+        """Deletes a specific task from a project (US-7)."""
+        project = self.find_project(project_id)
+        if not project:
+            # find_project prints the error
+            return False
+
+        for task in project.tasks:
+            if task.id == task_id:
+                project.tasks.remove(task)
+                print(f"Task '{task.title}' was successfully deleted from project '{project.name}'.")
+                return True
+        
+        print(f"Error: Task with ID '{task_id}' not found in this project.")
+        return False

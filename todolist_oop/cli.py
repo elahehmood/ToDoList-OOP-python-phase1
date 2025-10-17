@@ -1,12 +1,19 @@
 from .services import TodoListManager
 from .models import Project
 
+def print_main_menu():
+    print("\n===== ToDoList - Main Menu =====")
+    print("1. Project Management")
+    print("2. Task Management")
+    print("0. Exit")
+
+
 def print_project_menu():
     print("\n--- Project Management ---")
     print("1. Create a new project")
     print("2. List all projects")
-    print("3. Edit a project")   # <-- Corrected to 3
-    print("4. Delete a project") # <-- Corrected to 4
+    print("3. Edit a project")   
+    print("4. Delete a project") 
     print("9. Back to Main Menu")
 
 def handle_project_management(manager: TodoListManager):
@@ -45,6 +52,7 @@ def create_project_cli(manager: TodoListManager):
         # Error message is printed by the service layer
         pass
 
+
 def edit_project_cli(manager: TodoListManager):
     """Handles the user interaction for editing a project."""
     manager.list_projects()
@@ -63,11 +71,16 @@ def edit_project_cli(manager: TodoListManager):
 
     manager.edit_project(project_id, new_name, new_description)
 
-def print_main_menu():
-    print("\n===== ToDoList - Main Menu =====")
-    print("1. Project Management")
-    print("2. Task Management")
-    print("0. Exit")
+
+def print_task_menu():
+    print("\n--- Task Management ---")
+    print("1. Add a task to a project")
+    print("2. List tasks in a project")
+    print("3. Change a task's status")
+    print("4. Edit a task's details")   
+    print("5. Delete a task")          
+    print("9. Back to Main Menu")
+    
 
 def add_task_cli(manager: TodoListManager):
     """Handles user input for adding a task to a project."""
@@ -86,12 +99,14 @@ def add_task_cli(manager: TodoListManager):
     
     manager.add_task_to_project(project_id, title, desc, deadline)
 
+
 def list_tasks_cli(manager: TodoListManager):
     """Handles the user interaction for listing tasks in a project (US-9)."""
     print("\n--- List Tasks ---")
     manager.list_projects()
     project_id = input("Enter the project ID to list its tasks: ").strip()
     manager.list_tasks_in_project(project_id)
+
 
 def update_task_status_cli(manager: TodoListManager):
     """Handles the user interaction for changing a task's status (US-5)."""
@@ -109,6 +124,37 @@ def update_task_status_cli(manager: TodoListManager):
     
     manager.update_task_status(project_id, task_id, status)
 
+def edit_task_cli(manager: TodoListManager):
+    """Handles the user interaction for editing a task (US-6)."""
+    print("\n--- Edit Task ---")
+    manager.list_projects()
+    project_id = input("Project ID containing the task: ").strip()
+    
+    # Show tasks for better UX
+    project = manager.find_project(project_id)
+    if project:
+        manager.list_tasks_in_project(project_id)
+    
+    task_id = input("Task ID to edit: ").strip()
+
+    print("\nNote: Leave fields blank to keep current value.")
+    new_title = input("New Title (max 30): ")
+    new_description = input("New Description (max 150): ")
+    new_deadline = input("New Deadline (YYYY-MM-DD): ")
+    new_status = input("New Status (todo, doing, done): ")
+    
+    manager.edit_task(project_id, task_id, new_title, new_description, new_deadline, new_status)
+
+
+def delete_task_cli(manager: TodoListManager):
+    """Handles the user interaction for deleting a task (US-7)."""
+    print("\n--- Delete Task ---")
+    project_id = input("Project ID containing the task: ").strip()
+    manager.list_tasks_in_project(project_id) # Show tasks for user reference
+    task_id = input("Task ID to delete: ").strip()
+    manager.delete_task(project_id, task_id)
+
+
 def handle_task_management(manager: TodoListManager):
     """Handles the task management submenu interactions."""
     while True:
@@ -121,11 +167,15 @@ def handle_task_management(manager: TodoListManager):
             list_tasks_cli(manager) 
         elif choice == '3':
             update_task_status_cli(manager) 
-        # Options 4, 5 will be added later
+        elif choice == '4':
+            edit_task_cli(manager) # <-- NEW ROUTE
+        elif choice == '5':
+            delete_task_cli(manager) # <-- NEW ROUTE
         elif choice == '9':
             break
         else:
             print("Invalid choice!")
+
 
 def run_cli():
     """The main application loop."""
