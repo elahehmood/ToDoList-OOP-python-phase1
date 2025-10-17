@@ -27,12 +27,16 @@ class TodoListManager:
         """Creates a new project (AC: limit checks, unique name)."""
         name = name.strip()
         description = description.strip()
-
+        
+        if not name:
+            print("Error: Project name cannot be empty.")
+            return None
+        # ----------------------------------------------------
+        
         # 1. Check MAX_NUMBER_OF_PROJECT limit
         if len(self.projects) >= self.max_projects:
             print(f"Error: You have reached the maximum limit of {self.max_projects} projects.")
             return None
-        
         # 2. Check for uniqueness and length
         if len(name) > 30:
             print("Error: Project name exceeds 30 characters.")

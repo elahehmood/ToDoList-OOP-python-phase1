@@ -28,9 +28,9 @@ def handle_project_management(manager: TodoListManager):
             create_project_cli(manager)
         elif choice == '2':
             list_projects_cli(manager)
-        elif choice == '3': # <-- CORRECTED: Should be EDIT
+        elif choice == '3': 
             edit_project_cli(manager) 
-        elif choice == '4': # <-- CORRECTED: Should be DELETE
+        elif choice == '4': 
             manager.list_projects() # addition for better UX
             project_id = input("Enter the ID of the project to delete: ")
             manager.delete_project(project_id)
@@ -53,6 +53,26 @@ def create_project_cli(manager: TodoListManager):
         # Error message is printed by the service layer
         pass
 
+# در todolist_oop/cli.py، تابع edit_project_cli را اصلاح کنید
+
+def edit_project_cli(manager: TodoListManager):
+    """Handles the user interaction for editing a project."""
+    manager.list_projects()
+    print("\n--- Edit Project ---")
+    project_id = input("Enter the ID of the project to edit: ").strip()
+
+    project = manager.find_project(project_id)
+    if not project:
+        # find_project print Error massage
+        return
+
+    print(f"\n--- Editing Project: '{project.name}' (Current Name/Description) ---")
+    print("Note: Leave fields blank to keep the current value (max 30/150 chars).")
+
+    new_name = input(f"New Name (Current: {project.name}): ")
+    new_description = input(f"New Description (Current: {project.description}): ")
+
+    manager.edit_project(project, new_name, new_description)
 
 def edit_project_cli(manager: TodoListManager):
     """Handles the user interaction for editing a project."""
@@ -155,6 +175,7 @@ def edit_task_cli(manager: TodoListManager):
 def delete_task_cli(manager: TodoListManager):
     """Handles the user interaction for deleting a task (US-7)."""
     print("\n--- Delete Task ---")
+    manager.list_projects()
     project_id = input("Project ID containing the task: ").strip()
     manager.list_tasks_in_project(project_id) # Show tasks for user reference
     task_id = input("Task ID to delete: ").strip()
