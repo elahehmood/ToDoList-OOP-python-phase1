@@ -5,8 +5,8 @@ def print_project_menu():
     print("\n--- Project Management ---")
     print("1. Create a new project")
     print("2. List all projects")
-    print("3. Edit a project")
-    print("4. Delete a project")
+    print("3. Edit a project")   # <-- Corrected to 3
+    print("4. Delete a project") # <-- Corrected to 4
     print("9. Back to Main Menu")
 
 def handle_project_management(manager: TodoListManager):
@@ -18,17 +18,18 @@ def handle_project_management(manager: TodoListManager):
         if choice == '1':
             create_project_cli(manager)
         elif choice == '2':
-            list_projects_cli(manager)
+            manager.list_projects() # <-- Use manager.list_projects directly if list_projects_cli is not defined
         elif choice == '3':
+            edit_project_cli(manager) # <-- CORRECTED ROUTE
+        elif choice == '4': 
             manager.list_projects() # addition for better UX
             project_id = input("Enter the ID of the project to delete: ")
-            manager.delete_project(project_id) 
-        elif choice == '4': 
-            edit_project_cli(manager)      
+            manager.delete_project(project_id) # <-- CORRECTED ROUTE
         elif choice == '9':
             break
         else:
             print("Invalid choice!")
+
 
 def create_project_cli(manager: TodoListManager):
     """Handles user input for creating a project."""
