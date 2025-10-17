@@ -220,3 +220,32 @@ class TodoListManager:
         
         print(f"Error: Task with ID '{task_id}' not found in this project.")
         return False
+    
+    def find_task_in_project(self, project_id: str, task_id: str) -> Task | None:
+        """Finds a specific task within a specific project."""
+        project = self.find_project(project_id)
+        if project:
+            for task in project.tasks:
+                if task.id == task_id:
+                    return task
+            print(f"Error: Task with ID '{task_id}' not found in project '{project.name}'.")
+            return None
+        # find_project prints the error message if project is not found
+        return None
+    
+    def update_task_status(self, project_id: str, task_id: str, status: str) -> bool:
+        """Updates the status of a specific task (US-5)."""
+        valid_statuses = ["todo", "doing", "done"]
+        status = status.strip().lower()
+
+        if status not in valid_statuses:
+            print(f"Error: Invalid status. Allowed statuses are: {valid_statuses}")
+            return False
+
+        task = self.find_task_in_project(project_id, task_id)
+        if task:
+            task.status = status
+            print(f"Task '{task.title}' status updated to '{status}'.")
+            return True
+        # find_task_in_project prints the error message if task is not found
+        return False
