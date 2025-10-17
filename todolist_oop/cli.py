@@ -28,9 +28,9 @@ def handle_project_management(manager: TodoListManager):
             create_project_cli(manager)
         elif choice == '2':
             list_projects_cli(manager)
-        elif choice == '3': # <-- CORRECTED: Should be EDIT
+        elif choice == '3': 
             edit_project_cli(manager) 
-        elif choice == '4': # <-- CORRECTED: Should be DELETE
+        elif choice == '4': 
             manager.list_projects() # addition for better UX
             project_id = input("Enter the ID of the project to delete: ")
             manager.delete_project(project_id)
@@ -54,6 +54,7 @@ def create_project_cli(manager: TodoListManager):
         pass
 
 
+
 def edit_project_cli(manager: TodoListManager):
     """Handles the user interaction for editing a project."""
     manager.list_projects()
@@ -62,6 +63,7 @@ def edit_project_cli(manager: TodoListManager):
 
     project = manager.find_project(project_id)
     if not project:
+        # find_project print Error massage
         return
 
     print(f"\n--- Editing Project: '{project.name}' (Current Name/Description) ---")
@@ -70,7 +72,7 @@ def edit_project_cli(manager: TodoListManager):
     new_name = input(f"New Name (Current: {project.name}): ")
     new_description = input(f"New Description (Current: {project.description}): ")
 
-    manager.edit_project(project_id, new_name, new_description)
+    manager.edit_project(project, new_name, new_description)
 
 
 def list_projects_cli(manager: TodoListManager):
@@ -120,28 +122,51 @@ def update_task_status_cli(manager: TodoListManager):
     manager.list_projects()
     project_id = input("Project ID containing the task: ").strip()
     
-    # Optional: List tasks in project for user reference
     project = manager.find_project(project_id)
-    if project:
-        manager.list_tasks_in_project(project_id)
+    if not project:
+        return
+    
+    # Optional: List tasks in project for user reference
+    manager.list_tasks_in_project(project_id)
+
+    # if there is no task return
+    if not project.tasks:
+        return
     
     task_id = input("Task ID to update: ").strip()
+
+    task_to_update = manager.find_task_in_project(project_id, task_id)
+    if not task_to_update:
+        # if there is no task id with id inputed find_task_in_project print Error 
+        return
+
     status = input("New status (todo, doing, done): ").strip().lower()
     
     manager.update_task_status(project_id, task_id, status)
+
 
 def edit_task_cli(manager: TodoListManager):
     """Handles the user interaction for editing a task (US-6)."""
     print("\n--- Edit Task ---")
     manager.list_projects()
     project_id = input("Project ID containing the task: ").strip()
+    project = manager.find_project(project_id)
+    if not project:
+        return
     
     # Show tasks for better UX
-    project = manager.find_project(project_id)
-    if project:
-        manager.list_tasks_in_project(project_id)
+    manager.list_tasks_in_project(project_id)
+    
+    # if there is no task return
+    if not project.tasks:
+        return
     
     task_id = input("Task ID to edit: ").strip()
+    
+    task_to_edit = manager.find_task_in_project(project_id, task_id)
+    if not task_to_edit:
+        # if there is no task id with id inputed find_task_in_project print Error
+        return
 
     print("\nNote: Leave fields blank to keep current value.")
     new_title = input("New Title (max 30): ")
@@ -149,14 +174,24 @@ def edit_task_cli(manager: TodoListManager):
     new_deadline = input("New Deadline (YYYY-MM-DD): ")
     new_status = input("New Status (todo, doing, done): ")
     
-    manager.edit_task(project_id, task_id, new_title, new_description, new_deadline, new_status)
+    manager.edit_task(project, task_id, new_title, new_description, new_deadline, new_status)
 
 
 def delete_task_cli(manager: TodoListManager):
     """Handles the user interaction for deleting a task (US-7)."""
     print("\n--- Delete Task ---")
+    manager.list_projects() # Show projects for user reference
     project_id = input("Project ID containing the task: ").strip()
+    
+    project = manager.find_project(project_id)
+    if not project:
+        return
+        
     manager.list_tasks_in_project(project_id) # Show tasks for user reference
+    
+    if not project.tasks:
+        return
+
     task_id = input("Task ID to delete: ").strip()
     manager.delete_task(project_id, task_id)
 

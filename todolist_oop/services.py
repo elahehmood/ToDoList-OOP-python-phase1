@@ -19,19 +19,24 @@ class TodoListManager:
         for project in self.projects:
             if project.id == project_id:
                 return project
-            
+        print(f"Error: Project with ID '{project_id}' not found.")
         return None
+        
     
     def create_project(self, name: str, description: str) -> Project | None:
         """Creates a new project (AC: limit checks, unique name)."""
         name = name.strip()
         description = description.strip()
-
+        
+        if not name:
+            print("Error: Project name cannot be empty.")
+            return None
+        # ----------------------------------------------------
+        
         # 1. Check MAX_NUMBER_OF_PROJECT limit
         if len(self.projects) >= self.max_projects:
             print(f"Error: You have reached the maximum limit of {self.max_projects} projects.")
             return None
-        
         # 2. Check for uniqueness and length
         if len(name) > 30:
             print("Error: Project name exceeds 30 characters.")
@@ -70,15 +75,12 @@ class TodoListManager:
         # NOTE: find_project already prints "Error: Project with this ID not found."
         return False
 
-    def edit_project(self, project_id: str, new_name: str, new_description: str) -> bool:
+    def edit_project(self, project: Project, new_name: str, new_description: str) -> bool:
         """
-        Finds a project by ID and updates its name and description (US-2).
-        AC: Observes length limits, checks for name uniqueness, and updates only non-empty fields.
+        Updates the project's name and description (US-2). 
+        Receives the Project object directly from CLI.
         """
-        project = self.find_project(project_id)
-        if not project:
-            return False
-
+        
         new_name = new_name.strip()
         new_description = new_description.strip()
         updated = False
@@ -88,13 +90,14 @@ class TodoListManager:
             if len(new_name) > 30:
                 print("Error: New project name exceeds 30 characters.")
                 return False
-            if any(p.name == new_name and p.id != project_id for p in self.projects):
+            # check the there is no same name as new name in other projects
+            if any(p.name == new_name and p.id != project.id for p in self.projects):
                 print("Error: A project with this new name already exists.")
                 return False
             project.name = new_name
             updated = True
 
-        # Update Description
+     # Update Description
         if new_description and new_description != project.description:
             if len(new_description) > 150:
                 print("Error: New project description exceeds 150 characters.")
@@ -106,9 +109,9 @@ class TodoListManager:
             print(f" Project '{project.name}' updated successfully.")
             return True
         print("Info: No changes were made.")
-        return True # Successful operation even if nothing changed
-    
-    def edit_task(self, project_id: str, task_id: str, 
+        return True            
+
+    def edit_task(self, project: Project, task_id: str, 
                   new_title: str, new_description: str, 
                   new_deadline: str, new_status: str) -> bool:
         """
@@ -116,7 +119,9 @@ class TodoListManager:
         AC: Checks length limits, valid date format, and valid status.
         Only updates non-empty fields.
         """
-        task = self.find_task_in_project(project_id, task_id)
+        
+        task = self.find_task_in_project(project.id, task_id)
+
         if not task:
             # Error message printed by find_task_in_project
             return False
@@ -167,6 +172,7 @@ class TodoListManager:
         
         print("Info: No changes were made (input fields were empty).")
         return True
+    
 
     def add_task_to_project(self, project_id: str, title: str, description: str, deadline: str = None) -> Task | None:
         """
@@ -221,6 +227,7 @@ class TodoListManager:
         print(f"Error: Task with ID '{task_id}' not found in this project.")
         return False
     
+
     def list_tasks_in_project(self, project_id: str):
         """Displays a list of all tasks in a specific project (US-9)."""
         project = self.find_project(project_id)
@@ -235,4 +242,22 @@ class TodoListManager:
         print(f"\n--- Tasks in Project: {project.name} ---")
         for t in project.tasks:
             deadline_str = t.deadline if t.deadline else "Not set"
+            # Display ID, Title, Status, and Deadline
             print(f"ID: {t.id} | Title: {t.title} | Status: {t.status} | Deadline: {deadline_str}")
+    
+    def update_task_status(self, project_id: str, task_id: str, status: str) -> bool:
+        """Updates the status of a specific task (US-5)."""
+        valid_statuses = ["todo", "doing", "done"]
+        status = status.strip().lower()
+
+        if status not in valid_statuses:
+            print(f"Error: Invalid status. Allowed statuses are: {valid_statuses}")
+            return False
+
+        task = self.find_task_in_project(project_id, task_id)
+        if task:
+            task.status = status
+            print(f"Task '{task.title}' status updated to '{status}'.")
+            return True
+        # find_task_in_project prints the error message if task is not found
+        return False
