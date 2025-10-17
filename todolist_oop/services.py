@@ -227,6 +227,18 @@ class TodoListManager:
         print(f"Error: Task with ID '{task_id}' not found in this project.")
         return False
     
+    # Helper method for all task-related operations
+    def find_task_in_project(self, project_id: str, task_id: str) -> Task | None:
+        """Finds a specific task within a specific project."""
+        project = self.find_project(project_id)
+        if project:
+            for task in project.tasks:
+                if task.id == task_id:
+                    return task
+            print(f"Error: Task with ID '{task_id}' not found in project '{project.name}'.")
+            return None
+        # find_project prints the error message if project is not found
+        return None
 
     def list_tasks_in_project(self, project_id: str):
         """Displays a list of all tasks in a specific project (US-9)."""
