@@ -74,24 +74,6 @@ def edit_project_cli(manager: TodoListManager):
 
     manager.edit_project(project, new_name, new_description)
 
-def edit_project_cli(manager: TodoListManager):
-    """Handles the user interaction for editing a project."""
-    manager.list_projects()
-    print("\n--- Edit Project ---")
-    project_id = input("Enter the ID of the project to edit: ").strip()
-
-    project = manager.find_project(project_id)
-    if not project:
-        return
-
-    print(f"\n--- Editing Project: '{project.name}' (Current Name/Description) ---")
-    print("Note: Leave fields blank to keep the current value (max 30/150 chars).")
-
-    new_name = input(f"New Name (Current: {project.name}): ")
-    new_description = input(f"New Description (Current: {project.description}): ")
-
-    manager.edit_project(project_id, new_name, new_description)
-
 
 def list_projects_cli(manager: TodoListManager):
     """Handles the user interaction for listing projects."""

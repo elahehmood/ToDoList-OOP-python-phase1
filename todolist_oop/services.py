@@ -77,9 +77,10 @@ class TodoListManager:
 
     def edit_project(self, project: Project, new_name: str, new_description: str) -> bool:
         """
-        Updates the project's name and description (US-2).
-        AC: Observes length limits, checks for name uniqueness, and updates only non-empty fields.
+        Updates the project's name and description (US-2). 
+        Receives the Project object directly from CLI.
         """
+        
         new_name = new_name.strip()
         new_description = new_description.strip()
         updated = False
@@ -89,14 +90,14 @@ class TodoListManager:
             if len(new_name) > 30:
                 print("Error: New project name exceeds 30 characters.")
                 return False
-            
+            # check the there is no same name as new name in other projects
             if any(p.name == new_name and p.id != project.id for p in self.projects):
                 print("Error: A project with this new name already exists.")
                 return False
             project.name = new_name
             updated = True
 
-        # Update Description
+     # Update Description
         if new_description and new_description != project.description:
             if len(new_description) > 150:
                 print("Error: New project description exceeds 150 characters.")
@@ -108,8 +109,7 @@ class TodoListManager:
             print(f" Project '{project.name}' updated successfully.")
             return True
         print("Info: No changes were made.")
-        return True # Successful operation even if nothing changed
-    
+        return True            
 
     def edit_task(self, project_id: str, task_id: str, 
                   new_title: str, new_description: str, 
