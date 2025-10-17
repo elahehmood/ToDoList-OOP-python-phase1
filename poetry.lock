@@ -1,0 +1,18 @@
+[[package]]
+name = "python-dotenv"
+version = "1.1.1"
+description = "Read key-value pairs from a .env file and set them as environment variables"
+category = "main"
+optional = false
+python-versions = ">=3.9"
+
+[package.extras]
+cli = ["click (>=5.0)"]
+
+[metadata]
+lock-version = "1.1"
+python-versions = "^3.10" 
+content-hash = "66dfdd83ac5db25435f4bfc96d4af1e43436a4decca7236b7f127aa13b6de1b5"
+
+[metadata.files]
+python-dotenv = []

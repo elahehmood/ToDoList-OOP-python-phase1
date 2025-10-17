@@ -25,9 +25,9 @@ def handle_project_management(manager: TodoListManager):
         if choice == '1':
             create_project_cli(manager)
         elif choice == '2':
-            manager.list_projects() # <-- Use manager.list_projects directly if list_projects_cli is not defined
+            manager.list_projects() 
         elif choice == '3':
-            edit_project_cli(manager) # <-- CORRECTED ROUTE
+            edit_project_cli(manager)
         elif choice == '4': 
             manager.list_projects() # addition for better UX
             project_id = input("Enter the ID of the project to delete: ")
@@ -80,7 +80,7 @@ def print_task_menu():
     print("4. Edit a task's details")   
     print("5. Delete a task")          
     print("9. Back to Main Menu")
-    
+
 
 def add_task_cli(manager: TodoListManager):
     """Handles user input for adding a task to a project."""
@@ -168,9 +168,9 @@ def handle_task_management(manager: TodoListManager):
         elif choice == '3':
             update_task_status_cli(manager) 
         elif choice == '4':
-            edit_task_cli(manager) # <-- NEW ROUTE
+            edit_task_cli(manager) 
         elif choice == '5':
-            delete_task_cli(manager) # <-- NEW ROUTE
+            delete_task_cli(manager) 
         elif choice == '9':
             break
         else:
