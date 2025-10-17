@@ -53,7 +53,7 @@ def create_project_cli(manager: TodoListManager):
         # Error message is printed by the service layer
         pass
 
-# در todolist_oop/cli.py، تابع edit_project_cli را اصلاح کنید
+
 
 def edit_project_cli(manager: TodoListManager):
     """Handles the user interaction for editing a project."""
@@ -140,10 +140,16 @@ def update_task_status_cli(manager: TodoListManager):
     manager.list_projects()
     project_id = input("Project ID containing the task: ").strip()
     
-    # Optional: List tasks in project for user reference
     project = manager.find_project(project_id)
-    if project:
-        manager.list_tasks_in_project(project_id)
+    if not project:
+        return
+    
+    # Optional: List tasks in project for user reference
+    manager.list_tasks_in_project(project_id)
+
+    # if there is no task return
+    if not project.tasks:
+        return
     
     task_id = input("Task ID to update: ").strip()
     status = input("New status (todo, doing, done): ").strip().lower()
@@ -155,11 +161,17 @@ def edit_task_cli(manager: TodoListManager):
     print("\n--- Edit Task ---")
     manager.list_projects()
     project_id = input("Project ID containing the task: ").strip()
+    project = manager.find_project(project_id)    
+  
+    if not project:
+        # find_project printed ERROR massage
+        return
+    # if project have found shows the list of tasks of project 
+    manager.list_tasks_in_project(project_id)
     
-    # Show tasks for better UX
-    project = manager.find_project(project_id)
-    if project:
-        manager.list_tasks_in_project(project_id)
+    if not project.tasks:
+        # massage "Project 'P2' has no tasks." have printed by list_tasks_in_project 
+        return
     
     task_id = input("Task ID to edit: ").strip()
 
@@ -169,15 +181,24 @@ def edit_task_cli(manager: TodoListManager):
     new_deadline = input("New Deadline (YYYY-MM-DD): ")
     new_status = input("New Status (todo, doing, done): ")
     
-    manager.edit_task(project_id, task_id, new_title, new_description, new_deadline, new_status)
+    manager.edit_task(project, task_id, new_title, new_description, new_deadline, new_status)
 
 
 def delete_task_cli(manager: TodoListManager):
     """Handles the user interaction for deleting a task (US-7)."""
     print("\n--- Delete Task ---")
-    manager.list_projects()
+    manager.list_projects() # Show projects for user reference
     project_id = input("Project ID containing the task: ").strip()
+    
+    project = manager.find_project(project_id)
+    if not project:
+        return
+        
     manager.list_tasks_in_project(project_id) # Show tasks for user reference
+    
+    if not project.tasks:
+        return
+
     task_id = input("Task ID to delete: ").strip()
     manager.delete_task(project_id, task_id)
 
