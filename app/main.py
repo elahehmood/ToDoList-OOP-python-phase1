@@ -7,7 +7,6 @@ from app.cli.console import Console
 
 
 def main() -> None:
-    # یک session برای هر اجرای برنامه (برای سادگی)
     session = SessionLocal()
 
     # constructor injection → session → repositories
