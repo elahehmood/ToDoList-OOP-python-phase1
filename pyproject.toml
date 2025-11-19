@@ -9,6 +9,8 @@ packages = [{include = "todolist_oop"}]
 [tool.poetry.dependencies]
 python = "^3.10" 
 python-dotenv = "^1.1.1"
+alembic = "^1.17.2"
+psycopg2-binary = "^2.9.11"
 
 [build-system]
 requires = ["poetry-core"]
