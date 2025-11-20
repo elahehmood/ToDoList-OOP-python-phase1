@@ -1,44 +1,93 @@
 from datetime import date, datetime
-from typing import List, Optional
-from app.repositories.task_repository import TaskRepository
+from typing import Optional, List
+
+from app.db.session import SessionLocal
 from app.models.task import Task
+from app.repositories.task_repository import TaskRepository
 
 
 class TaskService:
-    """Business logic for tasks."""
+    def __init__(self) -> None:
+        self._session_factory = SessionLocal
 
-    def __init__(self, task_repo: TaskRepository):
-        self._task_repo = task_repo
-
-    def create_task(
+    def create_task_for_project(
         self,
-        title: str,
         project_id: int,
-        deadline: date,
+        title: str,
+        description: Optional[str],
+        deadline: Optional[date],
     ) -> Task:
-        if not title or not title.strip():
-            raise ValueError("Task title cannot be empty")
-
-        return self._task_repo.create(
-            title=title.strip(),
-            project_id=project_id,
-            deadline=deadline,
-        )
-
-    def get_task(self, task_id: int) -> Optional[Task]:
-        return self._task_repo.get_by_id(task_id)
+        with self._session_factory() as session:
+            repo = TaskRepository(session)
+            task = repo.create_for_project(project_id, title, description, deadline)
+            session.commit()
+            session.refresh(task)
+            return task
 
     def list_tasks_for_project(self, project_id: int) -> List[Task]:
-        return self._task_repo.list_by_project(project_id)
+        with self._session_factory() as session:
+            repo = TaskRepository(session)
+            return repo.list_for_project(project_id)
 
-    def auto_close_overdue(self, today: date) -> int:
-        """Close tasks where deadline < today and status != done."""
-        tasks = self._task_repo.get_overdue_not_done(today)
-        count = 0
+    def get_task(self, task_id: int) -> Optional[Task]:
+        with self._session_factory() as session:
+            repo = TaskRepository(session)
+            return repo.get(task_id)
 
-        for task in tasks:
-            task.status = "done"
-            task.closed_at = datetime.utcnow()
-            count += 1
+    def update_task_status(self, task_id: int, new_status: str) -> Optional[Task]:
+        if new_status not in {"todo", "doing", "done"}:
+            raise ValueError("Status must be one of: todo, doing, done")
 
-        return count
+        with self._session_factory() as session:
+            repo = TaskRepository(session)
+            task = repo.get(task_id)
+            if not task:
+                return None
+
+            task.status = new_status
+            if new_status == "done" and task.closed_at is None:
+                task.closed_at = datetime.utcnow()
+
+            repo.save(task)
+            session.commit()
+            session.refresh(task)
+            return task
+
+    def edit_task(
+        self,
+        task_id: int,
+        title: Optional[str],
+        description: Optional[str],
+        deadline: Optional[date],
+        status: Optional[str],
+    ) -> Optional[Task]:
+        with self._session_factory() as session:
+            repo = TaskRepository(session)
+            task = repo.get(task_id)
+            if not task:
+                return None
+
+            if title:
+                task.title = title
+            if deadline:
+                task.deadline = deadline
+            if status:
+                if status not in {"todo", "doing", "done"}:
+                    raise ValueError("Status must be one of: todo, doing, done")
+                task.status = status
+                if status == "done" and task.closed_at is None:
+                    task.closed_at = datetime.utcnow()
+
+            repo.save(task)
+            session.commit()
+            session.refresh(task)
+            return task
+
+    def delete_task(self, task_id: int) -> bool:
+        with self._session_factory() as session:
+            repo = TaskRepository(session)
+            ok = repo.delete(task_id)
+            if not ok:
+                return False
+            session.commit()
+            return True
