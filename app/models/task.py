@@ -9,7 +9,7 @@ class Task(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=False)
     status = Column(String(20), default="todo", nullable=False)
-    deadline = Column(Date, nullable=False)
+    deadline = Column(Date, nullable=True)
     closed_at = Column(DateTime, nullable=True)
 
     project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"))
