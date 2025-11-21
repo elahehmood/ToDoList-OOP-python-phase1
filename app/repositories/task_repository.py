@@ -1,10 +1,47 @@
-from typing import Optional, List
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
 from datetime import date
+from typing import List, Optional
+
 from sqlalchemy.orm import Session
+
 from app.models.task import Task
 
 
-class TaskRepository:
+class TaskRepository(ABC):
+    """
+    Abstract base repository for tasks.
+    """
+
+    @abstractmethod
+    def create_for_project(
+        self,
+        project_id: int,
+        title: str,
+        deadline: Optional[date],
+        status: str = "todo",
+    ) -> Task:
+        raise NotImplementedError
+
+    @abstractmethod
+    def list_for_project(self, project_id: int) -> List[Task]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_by_id(self, task_id: int) -> Optional[Task]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def delete(self, task_id: int) -> bool:
+        raise NotImplementedError
+
+
+class SqlAlchemyTaskRepository(TaskRepository):
+    """
+    Task repository based on a shared SQLAlchemy Session.
+    """
+
     def __init__(self, session: Session) -> None:
         self._session = session
 
@@ -12,14 +49,14 @@ class TaskRepository:
         self,
         project_id: int,
         title: str,
-        description: Optional[str],
         deadline: Optional[date],
+        status: str = "todo",
     ) -> Task:
         task = Task(
             project_id=project_id,
             title=title,
-            status="todo",
             deadline=deadline,
+            status=status,
         )
         self._session.add(task)
         return task
@@ -32,16 +69,12 @@ class TaskRepository:
             .all()
         )
 
-    def get(self, task_id: int) -> Optional[Task]:
+    def get_by_id(self, task_id: int) -> Optional[Task]:
         return self._session.query(Task).filter(Task.id == task_id).first()
 
     def delete(self, task_id: int) -> bool:
-        task = self.get(task_id)
+        task = self.get_by_id(task_id)
         if not task:
             return False
         self._session.delete(task)
         return True
-
-    def save(self, task: Task) -> Task:
-      
-        return task
