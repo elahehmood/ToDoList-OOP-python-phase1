@@ -1,15 +1,26 @@
+from __future__ import annotations
+
 from datetime import datetime
+from typing import Optional
 
 from app.services.project_service import ProjectService
 from app.services.task_service import TaskService
+from app.models.project import Project
+from app.models.task import Task
 
 
 class Console:
-    def __init__(self, project_service: ProjectService, task_service: TaskService) -> None:
+    def __init__(
+        self,
+        project_service: ProjectService,
+        task_service: TaskService,
+    ) -> None:
         self.project_service = project_service
         self.task_service = task_service
 
-    # ---------- Main Loop ----------
+    # ===========================
+    # Main loop
+    # ===========================
     def run(self) -> None:
         while True:
             self._print_main_menu()
@@ -25,20 +36,87 @@ class Console:
             else:
                 print("Invalid choice. Please try again.")
 
+    # ===========================
+    # Menus
+    # ===========================
     def _print_main_menu(self) -> None:
         print("\n===== ToDoList - Main Menu =====")
         print("1. Project Management")
         print("2. Task Management")
         print("0. Exit")
 
-    # ---------- Project Management ----------
     def _print_project_menu(self) -> None:
         print("\n--- Project Management ---")
         print("1. Create a new project")
         print("2. List all projects")
-        print("3. Delete a project")
+        print("3. Edit a project")
+        print("4. Delete a project")
         print("9. Back to Main Menu")
 
+    def _print_task_menu(self) -> None:
+        print("\n--- Task Management ---")
+        print("1. Add a task to a project")
+        print("2. List tasks in a project")
+        print("3. Change a task's status")
+        print("4. Edit a task's details")
+        print("5. Delete a task")
+        print("9. Back to Main Menu")
+
+    # ===========================
+    # Helpers
+    # ===========================
+    def _read_int(self, prompt: str) -> Optional[int]:
+        raw = input(prompt).strip()
+        if not raw:
+            print("Empty input.")
+            return None
+        try:
+            return int(raw)
+        except ValueError:
+            print("Invalid number.")
+            return None
+
+    def _parse_date_input(self, raw: str) -> Optional["datetime.date"]:
+        raw = raw.strip()
+        if not raw:
+            return None
+        try:
+            return datetime.strptime(raw, "%Y-%m-%d").date()
+        except ValueError:
+            print("Invalid date format, ignoring deadline. (Expected YYYY-MM-DD)")
+            return None
+
+    def _print_projects(self) -> None:
+        projects = self.project_service.list_projects()
+        if not projects:
+            print("No projects found.")
+            return
+
+        print("\n--- Projects ---")
+        for p in projects:
+            desc = p.description or ""
+            print(f"{p.id}: {p.name} - {desc}")
+
+    def _print_tasks_for_project(self, project: Project) -> None:
+        tasks = self.task_service.list_tasks_for_project(project.id)
+        if not tasks:
+            print(f"No tasks for project {project.id} ({project.name}).")
+            return
+
+        print(f"\nTasks for project {project.id} ({project.name}):")
+        for t in tasks:
+            deadline_str = t.deadline.isoformat() if t.deadline else "-"
+            closed_str = (
+                t.closed_at.isoformat(timespec="seconds") if t.closed_at else "-"
+            )
+            print(
+                f"{t.id}: {t.title} "
+                f"[{t.status}] deadline={deadline_str}, closed_at={closed_str}"
+            )
+
+    # ===========================
+    # Project management
+    # ===========================
     def _handle_project_management(self) -> None:
         while True:
             self._print_project_menu()
@@ -49,6 +127,8 @@ class Console:
             elif choice == "2":
                 self._list_projects()
             elif choice == "3":
+                self._edit_project()
+            elif choice == "4":
                 self._delete_project()
             elif choice == "9":
                 break
@@ -58,48 +138,67 @@ class Console:
     def _create_project(self) -> None:
         print("\n--- Create Project ---")
         name = input("Project name: ").strip()
-        description = input("Project description (optional): ").strip() or None
+        description = input("Project description (optional): ").strip()
 
-        try:
-            project = self.project_service.create_project(name, description)
-            print(f"Project '{project.name}' created successfully (ID: {project.id})")
-        except ValueError as e:
-            print(f"Error: {e}")
+        project = self.project_service.create_project(name, description)
+
+        if project is None:
+            return  # error already printed by service
+
+        print(f"Project '{project.name}' created successfully (ID: {project.id})")
 
     def _list_projects(self) -> None:
-        projects = self.project_service.list_projects()
-        if not projects:
-            print("No projects found.")
+        self._print_projects()
+
+    def _edit_project(self) -> None:
+        print("\n--- Edit Project ---")
+        self._print_projects()
+
+        pid_raw = input("Enter the ID of the project to edit: ").strip()
+        if not pid_raw.isdigit():
+            print("Invalid project ID.")
             return
 
-        print("\n--- Projects ---")
-        for p in projects:
-            print(f"{p.id}: {p.name} - {p.description or ''}")
+        project_id = int(pid_raw)
+        project = self.project_service.get_project(project_id)
+        if project is None:
+            print("Project not found.")
+            return
+
+        print(f"\nEditing project '{project.name}' (current description: {project.description or ''})")
+        print("Leave blank to keep current value.")
+
+        new_name = input(f"New name (current: {project.name}): ").strip()
+        new_description = input(f"New description (current: {project.description or ''}): ").strip()
+
+        if not new_name:
+            new_name = project.name
+        if new_description == "":
+            new_description = project.description
+
+        updated = self.project_service.edit_project(project_id, new_name, new_description)
+
+        if updated is not None:
+            print("Project updated successfully.")
 
     def _delete_project(self) -> None:
-        self._list_projects()
-        project_id_raw = input("Enter the ID of the project to delete: ").strip()
-        if not project_id_raw.isdigit():
-            print("Invalid ID.")
+        self._print_projects()
+        print("\n--- Delete Project ---")
+
+        project_id = self._read_int("Enter the ID of the project to delete: ")
+        if project_id is None:
             return
 
-        project_id = int(project_id_raw)
         ok = self.project_service.delete_project(project_id)
-        if ok:
-            print("Project deleted.")
-        else:
+        if not ok:
             print("Project not found.")
+            return
 
-    # ---------- Task Management ----------
-    def _print_task_menu(self) -> None:
-        print("\n--- Task Management ---")
-        print("1. Add a task to a project")
-        print("2. List tasks in a project")
-        print("3. Change a task's status")
-        print("4. Edit a task's details")
-        print("5. Delete a task")
-        print("9. Back to Main Menu")
+        print("Project deleted successfully.")
 
+    # ===========================
+    # Task management
+    # ===========================
     def _handle_task_management(self) -> None:
         while True:
             self._print_task_menu()
@@ -120,163 +219,138 @@ class Console:
             else:
                 print("Invalid choice!")
 
+    def _select_project(self) -> Optional[Project]:
+        self._print_projects()
+        project_id = self._read_int("Enter the project ID: ")
+        if project_id is None:
+            return None
+
+        project = self.project_service.get_project(project_id)
+        if not project:
+            print("Project not found.")
+            return None
+        return project
+
     def _add_task(self) -> None:
         print("\n--- Add Task ---")
-        self._list_projects()
-        project_id_raw = input("Enter the project ID to add a task to: ").strip()
-        if not project_id_raw.isdigit():
-            print("Invalid project ID.")
+        project = self._select_project()
+        if not project:
             return
 
-        project_id = int(project_id_raw)
-        title = input("Task title: ").strip()
-        deadline_raw = input("Deadline (optional, YYYY-MM-DD): ").strip()
-        deadline = None
-        if deadline_raw:
-            try:
-                deadline = datetime.strptime(deadline_raw, "%Y-%m-%d").date()
-            except ValueError:
-                print("Invalid date format, ignoring deadline.")
-
-        task = self.task_service.create_task_for_project(
-            project_id=project_id,
-            title=title,
-            deadline=deadline,
-        )
-        print(f"Task '{task.title}' created with ID: {task.id}")
-
-    def _list_tasks(self) -> None:
-        print("\n--- List Tasks ---")
-        self._list_projects()
-        project_id_raw = input("Enter the project ID to list its tasks: ").strip()
-        if not project_id_raw.isdigit():
-            print("Invalid project ID.")
-            return
-        project_id = int(project_id_raw)
-
-        tasks = self.task_service.list_tasks_for_project(project_id)
-        if not tasks:
-            print("No tasks for this project.")
-            return
-
-        print(f"\nTasks for project {project_id}:")
-        for t in tasks:
-            deadline = t.deadline.isoformat() if t.deadline else "-"
-            closed = t.closed_at.isoformat() if t.closed_at else "-"
-            print(f"{t.id}: {t.title} [{t.status}] deadline={deadline}, closed_at={closed}")
-
-    def _change_task_status(self) -> None:
-        print("\n--- Change Task Status ---")
-        self._list_projects()
-        project_id_raw = input("Project ID containing the task: ").strip()
-        if not project_id_raw.isdigit():
-            print("Invalid project ID.")
-            return
-
-        project_id = int(project_id_raw)
-        tasks = self.task_service.list_tasks_for_project(project_id)
-        if not tasks:
-            print("No tasks for this project.")
-            return
-
-        for t in tasks:
-            deadline = t.deadline.isoformat() if t.deadline else "-"
-            print(f"{t.id}: {t.title} [{t.status}] deadline={deadline}")
-
-        task_id_raw = input("Task ID to update: ").strip()
-        if not task_id_raw.isdigit():
-            print("Invalid task ID.")
-            return
-        task_id = int(task_id_raw)
-
-        new_status = input("New status (todo, doing, done): ").strip().lower()
-        try:
-            task = self.task_service.update_task_status(task_id, new_status)
-        except ValueError as e:
-            print(f"Error: {e}")
-            return
-
-        if not task:
-            print("Task not found.")
-        else:
-            print(f"Task '{task.title}' updated to status '{task.status}'.")
-
-    def _edit_task(self) -> None:
-        print("\n--- Edit Task ---")
-        self._list_projects()
-        project_id_raw = input("Project ID containing the task: ").strip()
-        if not project_id_raw.isdigit():
-            print("Invalid project ID.")
-            return
-        project_id = int(project_id_raw)
-
-        tasks = self.task_service.list_tasks_for_project(project_id)
-        if not tasks:
-            print("No tasks for this project.")
-            return
-
-        for t in tasks:
-            print(f"{t.id}: {t.title} [{t.status}]")
-
-        task_id_raw = input("Task ID to edit: ").strip()
-        if not task_id_raw.isdigit():
-            print("Invalid task ID.")
-            return
-        task_id = int(task_id_raw)
-
-        print("Leave fields blank to keep current value.")
-        new_title = input("New title: ").strip()
-        new_deadline_raw = input("New deadline (YYYY-MM-DD): ").strip()
-        new_status = input("New status (todo, doing, done): ").strip().lower()
-
-        deadline = None
-        if new_deadline_raw:
-            try:
-                deadline = datetime.strptime(new_deadline_raw, "%Y-%m-%d").date()
-            except ValueError:
-                print("Invalid date format, ignoring new deadline.")
+        title = input("Task title: ")
+        deadline_raw = input("Deadline (optional, YYYY-MM-DD): ")
+        deadline = self._parse_date_input(deadline_raw)
 
         try:
-            task = self.task_service.edit_task(
-                task_id=task_id,
-                title=new_title or None,
+            task = self.task_service.create_task_for_project(
+                project_id=project.id,
+                title=title,
                 deadline=deadline,
-                status=new_status or None,
             )
         except ValueError as e:
             print(f"Error: {e}")
             return
 
-        if not task:
+        print(
+            f"Task '{task.title}' created for project {project.id} "
+            f"with ID: {task.id}"
+        )
+
+    def _list_tasks(self) -> None:
+        print("\n--- List Tasks ---")
+        project = self._select_project()
+        if not project:
+            return
+
+        self._print_tasks_for_project(project)
+
+    def _change_task_status(self) -> None:
+        print("\n--- Change Task Status ---")
+        project = self._select_project()
+        if not project:
+            return
+
+        self._print_tasks_for_project(project)
+
+        task_id = self._read_int("Task ID to update: ")
+        if task_id is None:
+            return
+
+        new_status = input("New status (todo, doing, done): ").strip().lower()
+
+        try:
+            updated = self.task_service.update_task_status(task_id, new_status)
+        except ValueError as e:
+            print(f"Error: {e}")
+            return
+
+        if not updated:
             print("Task not found.")
-        else:
-            print("Task updated.")
+            return
+
+        print("Task status updated successfully.")
+
+    def _edit_task(self) -> None:
+        print("\n--- Edit Task ---")
+        project = self._select_project()
+        if not project:
+            return
+
+        self._print_tasks_for_project(project)
+
+        task_id = self._read_int("Task ID to edit: ")
+        if task_id is None:
+            return
+
+        print("Leave fields blank to keep current values.")
+
+        new_title = input("New title (optional): ")
+        new_deadline_raw = input("New deadline (optional, YYYY-MM-DD): ")
+        new_status = input("New status (todo, doing, done) (optional): ").strip().lower()
+
+        # Conver the emptys to  None
+        if new_title.strip() == "":
+            new_title = None
+
+        if new_status.strip() == "":
+            new_status = None
+
+        deadline_parsed = None
+        if new_deadline_raw.strip():
+            deadline_parsed = self._parse_date_input(new_deadline_raw)
+
+        try:
+            updated = self.task_service.edit_task(
+                task_id=task_id,
+                title=new_title,
+                deadline=deadline_parsed,
+                status=new_status,
+            )
+        except ValueError as e:
+            print(f"Error: {e}")
+            return
+
+        if not updated:
+            print("Task not found.")
+            return
+
+        print("Task updated successfully.")
 
     def _delete_task(self) -> None:
         print("\n--- Delete Task ---")
-        self._list_projects()
-        project_id_raw = input("Project ID containing the task: ").strip()
-        if not project_id_raw.isdigit():
-            print("Invalid project ID.")
-            return
-        project_id = int(project_id_raw)
-
-        tasks = self.task_service.list_tasks_for_project(project_id)
-        if not tasks:
-            print("No tasks for this project.")
+        project = self._select_project()
+        if not project:
             return
 
-        for t in tasks:
-            print(f"{t.id}: {t.title} [{t.status}]")
+        self._print_tasks_for_project(project)
 
-        task_id_raw = input("Task ID to delete: ").strip()
-        if not task_id_raw.isdigit():
-            print("Invalid task ID.")
+        task_id = self._read_int("Task ID to delete: ")
+        if task_id is None:
             return
-        task_id = int(task_id_raw)
 
         ok = self.task_service.delete_task(task_id)
-        if ok:
-            print("Task deleted.")
-        else:
+        if not ok:
             print("Task not found.")
+            return
+
+        print("Task deleted successfully.")
