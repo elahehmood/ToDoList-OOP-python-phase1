@@ -50,7 +50,7 @@ class SqlAlchemyTaskRepository(TaskRepository):
 
     def __init__(self, session: Session) -> None:
         self._session = session
-
+            
     def create_for_project(
         self,
         project_id: int,
@@ -68,6 +68,7 @@ class SqlAlchemyTaskRepository(TaskRepository):
         )
         self._session.add(task)
         return task
+    
 
     def list_for_project(self, project_id: int) -> List[Task]:
         return (

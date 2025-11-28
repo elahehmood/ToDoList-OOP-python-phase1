@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import os
 from datetime import date, datetime
 from typing import List, Optional
 
@@ -5,9 +8,17 @@ from app.models.task import Task
 from app.repositories.task_repository import SqlAlchemyTaskRepository
 
 
+MAX_TASKS_PER_PROJECT = int(os.getenv("MAX_TASKS_PER_PROJECT", "20"))
+VALID_STATUSES = {"todo", "doing", "done"}
+
+
 class TaskService:
+    """Service layer for task-related operations."""
+
     def __init__(self, task_repo: SqlAlchemyTaskRepository) -> None:
         self._task_repo = task_repo
+
+    # ---------- CRUD ----------
 
     def create_task_for_project(
         self,
@@ -15,23 +26,48 @@ class TaskService:
         title: str,
         description: Optional[str],
         deadline: Optional[date],
-    ) -> Task:
-        """Create a new task under the given project."""
-        normalized_title = title.strip()
-        if not normalized_title:
-            raise ValueError("Task title must not be empty")
+    ) -> Optional[Task]:
+        """
+        Create a new task under the given project, with phase-1 constraints:
 
-        normalized_description = description.strip() if description is not None else None
-        if normalized_description == "":
-            normalized_description = None
+        - title required, non-empty
+        - title length <= 30
+        - description length <= 150
+        - per-project task limit: MAX_TASKS_PER_PROJECT
+        - deadline already parsed (or None) by CLI
+        """
+        title_norm = (title or "").strip()
+        description_norm = (description or "").strip()
+
+        if not title_norm:
+            print("Error: Task title cannot be empty.")
+            return None
+
+        if len(title_norm) > 30:
+            print("Error: Task title exceeds 30 characters.")
+            return None
+
+        if len(description_norm) > 150:
+            print("Error: Task description exceeds 150 characters.")
+            return None
+
+        # Per-project limit
+        existing_tasks = self._task_repo.list_for_project(project_id)
+        if len(existing_tasks) >= MAX_TASKS_PER_PROJECT:
+            print(
+                f"Error: This project has reached the maximum limit of "
+                f"{MAX_TASKS_PER_PROJECT} tasks."
+            )
+            return None
 
         task = self._task_repo.create_for_project(
             project_id=project_id,
-            title=normalized_title,
-            description=normalized_description,
+            title=title_norm,
+            description=description_norm or None,
             deadline=deadline,
+            status="todo",
         )
-
+        # repository does NOT commit, service does
         self._task_repo._session.commit()
         self._task_repo._session.refresh(task)
         return task
@@ -45,13 +81,20 @@ class TaskService:
         return self._task_repo.get_by_id(task_id)
 
     def delete_task(self, task_id: int) -> bool:
-        """Delete a task by ID. Returns True if deleted, False if not found."""
+        """
+        Delete a task by ID.
+
+        Prints an error if not found.
+        """
         deleted = self._task_repo.delete(task_id)
         if not deleted:
+            print(f"Error: Task with ID '{task_id}' not found.")
             return False
 
         self._task_repo._session.commit()
         return True
+
+    # ---------- Status / editing ----------
 
     def update_task_status(self, task_id: int, new_status: str) -> Optional[Task]:
         """
@@ -61,12 +104,14 @@ class TaskService:
         - When status changes to "done" from a different state,
           closed_at is set to the current UTC time.
         """
-        normalized_status = new_status.strip().lower()
-        if normalized_status not in {"todo", "doing", "done"}:
-            raise ValueError("Status must be one of: todo, doing, done")
+        normalized_status = (new_status or "").strip().lower()
+        if normalized_status not in VALID_STATUSES:
+            print("Error: Status must be one of: todo, doing, done.")
+            return None
 
         task = self._task_repo.get_by_id(task_id)
         if task is None:
+            print(f"Error: Task with ID '{task_id}' not found.")
             return None
 
         previous_status = task.status
@@ -90,65 +135,90 @@ class TaskService:
         """
         Edit task fields:
 
-        - title: if provided and non-empty, updates title
-        - description: if provided, updates description (empty string → None)
-        - deadline: if provided (even None), updates deadline
+        - title: if provided and non-empty, updates title (<= 30 chars)
+        - description: if provided and non-empty, updates description (<= 150 chars)
+        - deadline: if provided (non-None), updates deadline
         - status: if provided and valid, updates status and closed_at
         """
         task = self._task_repo.get_by_id(task_id)
         if task is None:
+            print(f"Error: Task with ID '{task_id}' not found.")
             return None
 
+        updated = False
+
+        # Title
         if title is not None:
-            normalized_title = title.strip()
-            if normalized_title:
-                task.title = normalized_title
+            title_norm = title.strip()
+            if title_norm:
+                if len(title_norm) > 30:
+                    print("Error: New task title exceeds 30 characters.")
+                    return None
+                task.title = title_norm
+                updated = True
 
+        # Description
         if description is not None:
-            normalized_description = description.strip()
-            task.description = normalized_description or None
+            desc_norm = description.strip()
+            if desc_norm:
+                if len(desc_norm) > 150:
+                    print("Error: New task description exceeds 150 characters.")
+                    return None
+                task.description = desc_norm
+                updated = True
 
+        # Deadline
         if deadline is not None:
             task.deadline = deadline
+            updated = True
 
+        # Status
         if status is not None:
-            normalized_status = status.strip().lower()
-            if normalized_status:
-                if normalized_status not in {"todo", "doing", "done"}:
-                    raise ValueError("Status must be one of: todo, doing, done")
+            status_norm = status.strip().lower()
+            if status_norm:
+                if status_norm not in VALID_STATUSES:
+                    print("Error: Status must be one of: todo, doing, done.")
+                    return None
+
                 previous_status = task.status
-                task.status = normalized_status
-                if previous_status != "done" and normalized_status == "done":
+                task.status = status_norm
+                if previous_status != "done" and status_norm == "done":
                     task.closed_at = datetime.utcnow()
+                updated = True
+
+        if not updated:
+            print("Info: No changes were made.")
+            return task
 
         self._task_repo._session.commit()
         self._task_repo._session.refresh(task)
         return task
-    
-    def close_overdue_tasks(self, today: Optional[date] = None) -> int:
+
+    # ---------- Overdue auto-close ----------
+
+    def close_overdue_tasks(self) -> int:
         """
-        Automatically close all overdue tasks.
+        Close all overdue tasks:
 
-        - Overdue = has a non-null deadline AND deadline < today AND status != "done".
-        - For each such task:
-            * status is set to "done"
-            * closed_at is set to current UTC time (if not already set)
-        Returns:
-            number of tasks that were updated.
+        - A task is considered overdue based on Task.is_overdue
+        - Only non-"done" tasks are affected
+        - Sets status="done" and closed_at if needed
+
+        Returns the number of tasks closed.
         """
-        if today is None:
-            today = date.today()
-
-        overdue_tasks = self._task_repo.find_overdue_open_tasks(today)
-        if not overdue_tasks:
-            return 0
-
+        session = self._task_repo._session
+        tasks = session.query(Task).all()
         now = datetime.utcnow()
 
-        for task in overdue_tasks:
-            task.status = "done"
-            if task.closed_at is None:
-                task.closed_at = now
+        closed_count = 0
+        for task in tasks:
+            if task.status != "done" and task.is_overdue:
+                task.status = "done"
+                if task.closed_at is None:
+                    task.closed_at = now
+                closed_count += 1
 
-        self._task_repo._session.commit()
-        return len(overdue_tasks)
+        if closed_count > 0:
+            session.commit()
+
+        return closed_count

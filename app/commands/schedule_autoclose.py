@@ -1,3 +1,5 @@
+# app/commands/schedule_autoclose.py
+
 from __future__ import annotations
 
 import time
@@ -21,10 +23,10 @@ def main() -> None:
     Run a simple scheduler loop that periodically executes the auto-close job.
     """
 
-    # --- DEV MODE: run every minute (easier to test) ---
+    # Dev mode: every minute (easy to test)
     schedule.every().minute.do(run_job)
 
-    # --- PRODUCTION STYLE (commented for now) ---
+    # Production style (example):
     # schedule.every().day.at("02:00").do(run_job)
 
     print("Started overdue auto-close scheduler (every 1 minute). Press Ctrl+C to stop.")
