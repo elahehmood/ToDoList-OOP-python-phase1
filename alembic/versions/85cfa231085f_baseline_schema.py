@@ -1,8 +1,8 @@
-"""create_tables
+"""baseline_schema
 
-Revision ID: 312771219d39
+Revision ID: 85cfa231085f
 Revises: 
-Create Date: 2025-11-20 10:44:27.879272
+Create Date: 2025-11-28 10:29:41.724010
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '312771219d39'
+revision = '85cfa231085f'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -29,8 +29,9 @@ def upgrade():
     op.create_table('tasks',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(length=255), nullable=False),
+    sa.Column('description', sa.String(length=255), nullable=True),
     sa.Column('status', sa.String(length=20), nullable=False),
-    sa.Column('deadline', sa.Date(), nullable=False),
+    sa.Column('deadline', sa.Date(), nullable=True),
     sa.Column('closed_at', sa.DateTime(), nullable=True),
     sa.Column('project_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['project_id'], ['projects.id'], ondelete='CASCADE'),

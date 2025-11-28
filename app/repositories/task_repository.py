@@ -19,6 +19,7 @@ class TaskRepository(ABC):
         self,
         project_id: int,
         title: str,
+        description: Optional[str],
         deadline: Optional[date],
         status: str = "todo",
     ) -> Task:
@@ -49,12 +50,14 @@ class SqlAlchemyTaskRepository(TaskRepository):
         self,
         project_id: int,
         title: str,
+        description: Optional[str],
         deadline: Optional[date],
         status: str = "todo",
     ) -> Task:
         task = Task(
             project_id=project_id,
             title=title,
+            description=description,
             deadline=deadline,
             status=status,
         )

@@ -1,8 +1,8 @@
-"""make task deadline nullable
+"""add_task_description
 
-Revision ID: 5236453cafd3
-Revises: e0cb15130b94
-Create Date: 2025-11-21 11:08:11.563320
+Revision ID: 3e996a857aa2
+Revises: 21f6aac25b87
+Create Date: 2025-11-28 11:39:51.521204
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '5236453cafd3'
-down_revision = 'e0cb15130b94'
+revision = '3e996a857aa2'
+down_revision = '21f6aac25b87'
 branch_labels = None
 depends_on = None
 

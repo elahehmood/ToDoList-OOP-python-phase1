@@ -58,3 +58,5 @@ class ProjectService:
             self._project_repo._session.rollback()
             print(f"Error: Project with name '{new_name}' already exists.")
             return None
+    
+        

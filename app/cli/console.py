@@ -231,38 +231,101 @@ class Console:
             return None
         return project
 
+
     def _add_task(self) -> None:
         print("\n--- Add Task ---")
-        project = self._select_project()
-        if not project:
+        self._print_projects()
+
+        project_id_str = input("Enter the project ID to add a task to: ").strip()
+        if not project_id_str.isdigit():
+            print("Invalid project ID.")
             return
 
-        title = input("Task title: ")
-        deadline_raw = input("Deadline (optional, YYYY-MM-DD): ")
-        deadline = self._parse_date_input(deadline_raw)
+        project_id = int(project_id_str)
 
-        try:
-            task = self.task_service.create_task_for_project(
-                project_id=project.id,
-                title=title,
-                deadline=deadline,
-            )
-        except ValueError as e:
-            print(f"Error: {e}")
+        # Check that the project exists before creating a task
+        project = self.project_service.get_project(project_id)
+        if project is None:
+            print(f"Project with ID {project_id} not found.")
             return
 
-        print(
-            f"Task '{task.title}' created for project {project.id} "
-            f"with ID: {task.id}"
+        title = input("Task title: ").strip()
+        description = input("Task description (optional): ").strip()
+
+        deadline_input = input("Deadline (optional, YYYY-MM-DD): ").strip()
+        deadline_date: date | None = None
+        if deadline_input:
+            try:
+                year, month, day = map(int, deadline_input.split("-"))
+                deadline_date = date(year, month, day)
+            except ValueError:
+                print("Invalid date format, ignoring deadline (expected YYYY-MM-DD).")
+
+        task = self.task_service.create_task_for_project(
+            project_id=project_id,
+            title=title,
+            description=description or None,
+            deadline=deadline_date,
         )
 
+        print(f"Task '{task.title}' created with ID {task.id}.")
+
     def _list_tasks(self) -> None:
+        """List all tasks for a chosen project."""
         print("\n--- List Tasks ---")
-        project = self._select_project()
-        if not project:
+        self._print_projects()
+
+        project_id_str = input("Enter the project ID: ").strip()
+        if not project_id_str.isdigit():
+            print("Invalid project ID.")
             return
 
-        self._print_tasks_for_project(project)
+        project_id = int(project_id_str)
+
+        project = self.project_service.get_project(project_id)
+        if project is None:
+            print(f"Project with ID {project_id} not found.")
+            return
+
+        tasks = self.task_service.list_tasks_for_project(project_id)
+        if not tasks:
+            print(f"No tasks found for project {project_id} ({project.name}).")
+            return
+
+        print(f"\nTasks for project {project_id} ({project.name}):")
+        for t in tasks:
+            deadline_str = t.deadline.isoformat() if t.deadline else "-"
+            closed_at_str = t.closed_at.isoformat() if t.closed_at else "-"
+            print(f"{t.id}: {t.title} [{t.status}] deadline={deadline_str}, closed_at={closed_at_str}")
+
+    def _list_tasks(self) -> None:
+        """List all tasks for a chosen project."""
+        print("\n--- List Tasks ---")
+        self._print_projects()
+
+        project_id_str = input("Enter the project ID: ").strip()
+        if not project_id_str.isdigit():
+            print("Invalid project ID.")
+            return
+
+        project_id = int(project_id_str)
+
+        project = self.project_service.get_project(project_id)
+        if project is None:
+            print(f"Project with ID {project_id} not found.")
+            return
+
+        tasks = self.task_service.list_tasks_for_project(project_id)
+        if not tasks:
+            print(f"No tasks found for project {project_id} ({project.name}).")
+            return
+
+        print(f"\nTasks for project {project_id} ({project.name}):")
+        for t in tasks:
+            deadline_str = t.deadline.isoformat() if t.deadline else "-"
+            closed_at_str = t.closed_at.isoformat() if t.closed_at else "-"
+            print(f"{t.id}: {t.title} [{t.status}] deadline={deadline_str}, closed_at={closed_at_str}")
+
 
     def _change_task_status(self) -> None:
         print("\n--- Change Task Status ---")
@@ -292,49 +355,59 @@ class Console:
 
     def _edit_task(self) -> None:
         print("\n--- Edit Task ---")
-        project = self._select_project()
-        if not project:
+        self._print_projects()
+        project_id_str = input("Enter the project ID: ").strip()
+
+        if not project_id_str.isdigit():
+            print("Invalid project ID.")
             return
 
-        self._print_tasks_for_project(project)
+        project_id = int(project_id_str)
+        self._print_tasks_for_project(project_id)
 
-        task_id = self._read_int("Task ID to edit: ")
-        if task_id is None:
+        task_id_str = input("Enter the task ID to edit: ").strip()
+        if not task_id_str.isdigit():
+            print("Invalid task ID.")
             return
+
+        task_id = int(task_id_str)
 
         print("Leave fields blank to keep current values.")
-
         new_title = input("New title (optional): ")
-        new_deadline_raw = input("New deadline (optional, YYYY-MM-DD): ")
-        new_status = input("New status (todo, doing, done) (optional): ").strip().lower()
+        new_description = input("New description (optional): ")
+        new_deadline_str = input("New deadline (optional, YYYY-MM-DD): ")
+        new_status = input("New status (todo/doing/done, optional): ")
 
-        # Conver the emptys to  None
-        if new_title.strip() == "":
-            new_title = None
+        from datetime import datetime, date
 
-        if new_status.strip() == "":
-            new_status = None
+        new_deadline: date | None = None
+        if new_deadline_str:
+            try:
+                new_deadline = datetime.strptime(new_deadline_str, "%Y-%m-%d").date()
+            except ValueError:
+                print("Invalid date format, ignoring deadline (expected YYYY-MM-DD).")
 
-        deadline_parsed = None
-        if new_deadline_raw.strip():
-            deadline_parsed = self._parse_date_input(new_deadline_raw)
+        # normalize blanks → None
+        title_arg = new_title if new_title.strip() else None
+        description_arg = new_description if new_description.strip() else None
+        status_arg = new_status if new_status.strip() else None
 
         try:
             updated = self.task_service.edit_task(
                 task_id=task_id,
-                title=new_title,
-                deadline=deadline_parsed,
-                status=new_status,
+                title=title_arg,
+                description=description_arg,
+                deadline=new_deadline,
+                status=status_arg,
             )
-        except ValueError as e:
-            print(f"Error: {e}")
+        except ValueError as exc:
+            print(f"Error: {exc}")
             return
 
-        if not updated:
+        if updated is None:
             print("Task not found.")
-            return
-
-        print("Task updated successfully.")
+        else:
+            print(f"Task {updated.id} updated.")
 
     def _delete_task(self) -> None:
         print("\n--- Delete Task ---")
