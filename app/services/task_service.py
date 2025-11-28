@@ -124,3 +124,31 @@ class TaskService:
         self._task_repo._session.commit()
         self._task_repo._session.refresh(task)
         return task
+    
+    def close_overdue_tasks(self, today: Optional[date] = None) -> int:
+        """
+        Automatically close all overdue tasks.
+
+        - Overdue = has a non-null deadline AND deadline < today AND status != "done".
+        - For each such task:
+            * status is set to "done"
+            * closed_at is set to current UTC time (if not already set)
+        Returns:
+            number of tasks that were updated.
+        """
+        if today is None:
+            today = date.today()
+
+        overdue_tasks = self._task_repo.find_overdue_open_tasks(today)
+        if not overdue_tasks:
+            return 0
+
+        now = datetime.utcnow()
+
+        for task in overdue_tasks:
+            task.status = "done"
+            if task.closed_at is None:
+                task.closed_at = now
+
+        self._task_repo._session.commit()
+        return len(overdue_tasks)

@@ -36,7 +36,12 @@ class TaskRepository(ABC):
     @abstractmethod
     def delete(self, task_id: int) -> bool:
         raise NotImplementedError
-
+    
+    @abstractmethod
+    def find_overdue_open_tasks(self, today: date) -> List[Task]:
+        """Return all tasks that have a deadline before 'today' and are not done."""
+        raise NotImplementedError
+    
 
 class SqlAlchemyTaskRepository(TaskRepository):
     """
@@ -81,3 +86,14 @@ class SqlAlchemyTaskRepository(TaskRepository):
             return False
         self._session.delete(task)
         return True
+    def find_overdue_open_tasks(self, today: date) -> List[Task]:
+        return (
+            self._session.query(Task)
+            .filter(
+                Task.deadline.isnot(None),
+                Task.deadline < today,
+                Task.status != "done",
+            )
+            .order_by(Task.id)
+            .all()
+        )    

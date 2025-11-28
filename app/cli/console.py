@@ -60,6 +60,7 @@ class Console:
         print("3. Change a task's status")
         print("4. Edit a task's details")
         print("5. Delete a task")
+        print("6. Close overdue tasks")
         print("9. Back to Main Menu")
 
     # ===========================
@@ -214,6 +215,8 @@ class Console:
                 self._edit_task()
             elif choice == "5":
                 self._delete_task()
+            elif choice == "6":
+                self._close_overdue_tasks()                
             elif choice == "9":
                 break
             else:
@@ -427,3 +430,12 @@ class Console:
             return
 
         print("Task deleted successfully.")
+
+    def _close_overdue_tasks(self) -> None:
+        print("\n--- Close Overdue Tasks ---")
+        count = self.task_service.close_overdue_tasks()
+
+        if count == 0:
+            print("No overdue tasks were found.")
+        else:
+            print(f"Automatically closed {count} overdue task(s).")

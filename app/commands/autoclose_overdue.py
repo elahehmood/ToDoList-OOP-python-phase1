@@ -6,16 +6,17 @@ from app.services.task_service import TaskService
 
 
 def autoclose_overdue_tasks() -> None:
+    """Close all overdue tasks once and exit."""
     session = SessionLocal()
     try:
         task_repo = SqlAlchemyTaskRepository(session)
         task_service = TaskService(task_repo)
 
+        # you can omit 'today' argument, default is date.today()
         today = date.today()
-        closed_count = task_service.auto_close_overdue(today)
-        session.commit()
+        closed_count = task_service.close_overdue_tasks(today)
 
-        print(f"Closed {closed_count} overdue tasks")
+        print(f"Closed {closed_count} overdue task(s).")
     finally:
         session.close()
 
