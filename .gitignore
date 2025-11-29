@@ -24,3 +24,4 @@ Thumbs.db
 # Essential for your project since you use .env
 .env
 logs/
+*.log
