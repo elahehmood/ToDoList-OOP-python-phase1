@@ -85,6 +85,48 @@ Use the noted project ID (`P_ID_1`) for the tasks in this section.
 | **3.5** | Main: **0** | - | `Goodbye!` | (Exit) |
 
 -----
+# 📋 ToDoList-OOP – Phase 2 (RDB + Scheduling)
+
+This phase is a continuation of **ToDoList-OOP-python-phase1**.  
+All user stories and validation rules from phase 1 are preserved, but the app now:
+
+- Persists data in **PostgreSQL** instead of in-memory lists  
+- Uses **SQLAlchemy** and **Alembic** for ORM and migrations  
+- Follows a layered architecture (**models → repositories → services → CLI**)  
+- Adds **automatic closing of overdue tasks** via:
+  - A one-shot CLI command
+  - A long-running scheduler (for development)
+  - A real **cron job** (for production-style scheduling)
+
+---
+
+## 🧱 Architecture Overview
+
+**Package layout (phase 2):**
+
+- `app/db/`
+  - `session.py` – creates the SQLAlchemy engine and `SessionLocal` from `DATABASE_URL` (via `python-dotenv`)
+  - `base.py` – `Base` declarative class
+- `app/models/`
+  - `project.py` – `Project` SQLAlchemy model
+  - `task.py` – `Task` SQLAlchemy model  
+    - `deadline` (optional `DATE`)
+    - `closed_at` (`DATETIME`, set when task becomes `done`)
+    - `is_overdue` property (deadline vs today / `closed_at`)
+- `app/repositories/`
+  - `project_repository.py` – `ProjectRepository` / `SqlAlchemyProjectRepository`
+  - `task_repository.py` – `TaskRepository` / `SqlAlchemyTaskRepository`
+- `app/services/`
+  - `project_service.py` – business rules for projects (names, limits, uniqueness)
+  - `task_service.py` – business rules for tasks (limits, validation, overdue handling)
+- `app/cli/console.py` – main interactive CLI (menus, input parsing, printing)
+- `app/main.py` – CLI entry point (`python -m app.main`)
+- `app/commands/`
+  - `autoclose_overdue.py` – one-shot command to close all overdue tasks
+  - `schedule_autoclose.py` – development scheduler using `schedule` library
+- `alembic/` – migrations and configuration for DB schema
+
+---
 
 ## ⚠️ Final Reminder
 
