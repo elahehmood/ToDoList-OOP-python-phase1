@@ -23,3 +23,4 @@ Thumbs.db
 # Environment Variables (Contains sensitive information)
 # Essential for your project since you use .env
 .env
+logs/

@@ -97,13 +97,6 @@ class TaskService:
     # ---------- Status / editing ----------
 
     def update_task_status(self, task_id: int, new_status: str) -> Optional[Task]:
-        """
-        Update the status of a task and maintain closed_at correctly.
-
-        - Status must be one of: "todo", "doing", "done"
-        - When status changes to "done" from a different state,
-          closed_at is set to the current UTC time.
-        """
         normalized_status = (new_status or "").strip().lower()
         if normalized_status not in VALID_STATUSES:
             print("Error: Status must be one of: todo, doing, done.")
@@ -117,8 +110,13 @@ class TaskService:
         previous_status = task.status
         task.status = normalized_status
 
-        if previous_status != "done" and normalized_status == "done":
-            task.closed_at = datetime.utcnow()
+        if normalized_status == "done":
+            # going to done → ensure closed_at is set (even if it was done before)
+            if previous_status != "done":
+                task.closed_at = datetime.utcnow()
+        else:
+            # any non-done status → always clear closed_at
+            task.closed_at = None
 
         self._task_repo._session.commit()
         self._task_repo._session.refresh(task)
@@ -182,8 +180,14 @@ class TaskService:
 
                 previous_status = task.status
                 task.status = status_norm
-                if previous_status != "done" and status_norm == "done":
-                    task.closed_at = datetime.utcnow()
+
+                if status_norm == "done":
+                    if previous_status != "done":
+                        task.closed_at = datetime.utcnow()
+                else:
+                    # any non-done status → clear closed_at
+                    task.closed_at = None
+
                 updated = True
 
         if not updated:
