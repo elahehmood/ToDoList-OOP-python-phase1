@@ -7,6 +7,16 @@ from app.cli.console import Console
 
 
 def main() -> None:
+
+ # === CLI deprecation banner (Phase 3 requirement) ===
+    print(
+        "[DEPRECATION] The CLI interface is deprecated and will be removed in a future version.\n"
+        "Please use the FastAPI-based Web API (Phase 3) instead.\n"
+        "Run: poetry run uvicorn phase3_api.api_main:app --reload\n"
+    )
+
+   
+   
     session = SessionLocal()
 
     # constructor injection → session → repositories
