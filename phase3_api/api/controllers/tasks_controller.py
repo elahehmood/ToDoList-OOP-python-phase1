@@ -1,6 +1,7 @@
-from typing import List
+from typing import List, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from phase3_api.api.controller_schemas.requests.task_request_schema import (
@@ -48,6 +49,15 @@ def get_project_service(db: Session = Depends(get_db)) -> ProjectService:
     return ProjectService(project_repo=project_repo)
 
 
+class CloseOverdueResult(BaseModel):
+    """
+    Response model for closing overdue tasks.
+    """
+    closed_count: int
+    scope: Literal["all", "project"]
+    project_id: int | None = None
+
+
 @router.get("/", response_model=List[TaskResponse])
 def list_tasks(
     project_id: int | None = Query(
@@ -62,9 +72,11 @@ def list_tasks(
 
     - If the project_id is missing → 400 Bad Request.
     - If the project does not exist → 404 Project not found.
-    - If the project exists:
-        * automatically close overdue tasks for that project
-        * then return the current list of tasks.
+    - If the project exists → return the current list of tasks for that project.
+
+    NOTE:
+    This endpoint is a pure read operation (no side effects).
+    Closing overdue tasks is handled by a dedicated POST endpoint.
     """
     if project_id is None:
         raise HTTPException(
@@ -80,12 +92,62 @@ def list_tasks(
             detail="Project not found.",
         )
 
-    # Auto-close overdue tasks for this project before listing.
-    task_service.close_overdue_tasks_for_project(project_id=project_id)
-
-    # Then list tasks for that valid project.
+    # Just list tasks; do not modify any state here.
     tasks = task_service.list_tasks_for_project(project_id=project_id)
     return tasks
+
+
+@router.post(
+    "/close-overdue",
+    response_model=CloseOverdueResult,
+    status_code=status.HTTP_200_OK,
+)
+def close_overdue_tasks(
+    project_id: int | None = Query(
+        default=None,
+        description=(
+            "If provided, only overdue tasks for this project will be closed. "
+            "If omitted, all overdue tasks in the system will be closed."
+        ),
+    ),
+    task_service: TaskService = Depends(get_task_service),
+    project_service: ProjectService = Depends(get_project_service),
+):
+    """
+    Close overdue tasks.
+
+    - If project_id is provided:
+        * validate that the project exists
+        * close overdue tasks only for that project
+    - If project_id is omitted:
+        * close overdue tasks for all projects
+
+    This is a state-changing operation, so it is exposed as POST,
+    keeping GET /tasks as a safe read-only operation.
+    """
+    # Close overdue tasks for a specific project
+    if project_id is not None:
+        project = project_service.get_project(project_id)
+        if project is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found.",
+            )
+
+        closed_count = task_service.close_overdue_tasks_for_project(project_id=project_id)
+        return CloseOverdueResult(
+            closed_count=closed_count,
+            scope="project",
+            project_id=project_id,
+        )
+
+    # Close overdue tasks for all projects
+    closed_count = task_service.close_overdue_tasks()
+    return CloseOverdueResult(
+        closed_count=closed_count,
+        scope="all",
+        project_id=None,
+    )
 
 
 @router.post(

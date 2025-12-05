@@ -11,7 +11,8 @@ class TaskCreateRequest(BaseModel):
 
 
 class TaskUpdateRequest(BaseModel):
-    """Request payload for partially updating an existing task."""
+    """Request payload for partially updating an existing task (PATCH)."""
+    # All fields are optional; only provided fields will be updated.
     title: str | None = Field(default=None, min_length=1, max_length=30)
     description: str | None = Field(default=None, max_length=150)
     deadline: date | None = None
