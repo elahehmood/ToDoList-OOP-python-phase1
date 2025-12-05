@@ -6,7 +6,7 @@ from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
-from app.models.task import Task
+from phase3_api.models.task import Task
 
 
 class TaskRepository(ABC):

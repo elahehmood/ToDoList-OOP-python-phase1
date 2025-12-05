@@ -3,8 +3,8 @@ from __future__ import annotations
 import os
 from typing import List, Optional
 
-from app.models.project import Project
-from app.repositories.project_repository import SqlAlchemyProjectRepository
+from phase3_api.models.project import Project
+from phase3_api.repositories.project_repository import SqlAlchemyProjectRepository
 
 
 # Defaults match phase 1 .env semantics

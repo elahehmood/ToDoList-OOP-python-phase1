@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models.project import Project
+from phase3_api.models.project import Project
 
 
 class ProjectRepository(ABC):

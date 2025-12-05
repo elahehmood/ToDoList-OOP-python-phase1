@@ -4,8 +4,8 @@ import os
 from datetime import date, datetime
 from typing import List, Optional
 
-from app.models.task import Task
-from app.repositories.task_repository import SqlAlchemyTaskRepository
+from phase3_api.models.task import Task
+from phase3_api.repositories.task_repository import SqlAlchemyTaskRepository
 
 
 MAX_TASKS_PER_PROJECT = int(os.getenv("MAX_TASKS_PER_PROJECT", "20"))
