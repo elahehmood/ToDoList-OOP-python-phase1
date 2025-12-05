@@ -12,6 +12,8 @@ python-dotenv = "^1.1.1"
 alembic = "^1.17.2"
 psycopg2-binary = "^2.9.11"
 schedule = "^1.2.2"
+fastapi = "^0.123.9"
+uvicorn = "^0.38.0"
 
 [build-system]
 requires = ["poetry-core"]
