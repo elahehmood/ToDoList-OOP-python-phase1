@@ -226,3 +226,28 @@ class TaskService:
             session.commit()
 
         return closed_count
+    def close_overdue_tasks_for_project(self, project_id: int) -> int:
+        """
+        Close all overdue tasks for a single project.
+
+        - Uses Task.is_overdue to decide if a task is overdue.
+        - Only non-"done" tasks are affected.
+        - Sets status="done" and closed_at if needed.
+        - Returns the number of tasks closed for this project.
+        """
+        session = self._task_repo._session
+        tasks = self._task_repo.list_for_project(project_id)
+        now = datetime.utcnow()
+
+        closed_count = 0
+        for task in tasks:
+            if task.status != "done" and task.is_overdue:
+                task.status = "done"
+                if task.closed_at is None:
+                    task.closed_at = now
+                closed_count += 1
+
+        if closed_count > 0:
+            session.commit()
+
+        return closed_count

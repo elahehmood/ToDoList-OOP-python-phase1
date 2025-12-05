@@ -60,8 +60,11 @@ def list_tasks(
     """
     List tasks for a given project.
 
+    - If the project_id is missing → 400 Bad Request.
     - If the project does not exist → 404 Project not found.
-    - If the project exists but has no tasks → 200 with an empty list.
+    - If the project exists:
+        * automatically close overdue tasks for that project
+        * then return the current list of tasks.
     """
     if project_id is None:
         raise HTTPException(
@@ -76,6 +79,9 @@ def list_tasks(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found.",
         )
+
+    # Auto-close overdue tasks for this project before listing.
+    task_service.close_overdue_tasks_for_project(project_id=project_id)
 
     # Then list tasks for that valid project.
     tasks = task_service.list_tasks_for_project(project_id=project_id)
