@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -12,7 +12,9 @@ from phase3_api.api.controller_schemas.responses.task_response_schema import (
 )
 from phase3_api.db.session import SessionLocal
 from phase3_api.repositories.task_repository import SqlAlchemyTaskRepository
+from phase3_api.repositories.project_repository import SqlAlchemyProjectRepository
 from phase3_api.services.task_service import TaskService
+from phase3_api.services.project_service import ProjectService
 
 router = APIRouter()
 
@@ -33,8 +35,17 @@ def get_task_service(db: Session = Depends(get_db)) -> TaskService:
     """
     FastAPI dependency that builds a TaskService with a SQLAlchemy repository.
     """
-    repo = SqlAlchemyTaskRepository(session=db)
-    return TaskService(task_repo=repo)
+    task_repo = SqlAlchemyTaskRepository(session=db)
+    return TaskService(task_repo=task_repo)
+
+
+def get_project_service(db: Session = Depends(get_db)) -> ProjectService:
+    """
+    FastAPI dependency that builds a ProjectService with a SQLAlchemy repository.
+    This is used to validate that a project exists before operating on its tasks.
+    """
+    project_repo = SqlAlchemyProjectRepository(session=db)
+    return ProjectService(project_repo=project_repo)
 
 
 @router.get("/", response_model=List[TaskResponse])
@@ -43,13 +54,14 @@ def list_tasks(
         default=None,
         description="Project ID whose tasks should be listed. Required.",
     ),
-    service: TaskService = Depends(get_task_service),
+    task_service: TaskService = Depends(get_task_service),
+    project_service: ProjectService = Depends(get_project_service),
 ):
     """
     List tasks for a given project.
 
-    For now, a project_id is required, because the underlying repository
-    only supports listing tasks per project.
+    - If the project does not exist → 404 Project not found.
+    - If the project exists but has no tasks → 200 with an empty list.
     """
     if project_id is None:
         raise HTTPException(
@@ -57,7 +69,16 @@ def list_tasks(
             detail="Query parameter 'project_id' is required.",
         )
 
-    tasks = service.list_tasks_for_project(project_id=project_id)
+    # Check if the project exists first (business rule).
+    project = project_service.get_project(project_id)
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found.",
+        )
+
+    # Then list tasks for that valid project.
+    tasks = task_service.list_tasks_for_project(project_id=project_id)
     return tasks
 
 
@@ -68,12 +89,24 @@ def list_tasks(
 )
 def create_task(
     payload: TaskCreateRequest,
-    service: TaskService = Depends(get_task_service),
+    task_service: TaskService = Depends(get_task_service),
+    project_service: ProjectService = Depends(get_project_service),
 ):
     """
     Create a new task inside a given project.
+
+    - If the project does not exist → 404 Project not found.
+    - If business rules in the service fail → 400 Bad Request.
     """
-    task = service.create_task_for_project(
+    # Ensure project exists before creating a task for it.
+    project = project_service.get_project(payload.project_id)
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found.",
+        )
+
+    task = task_service.create_task_for_project(
         project_id=payload.project_id,
         title=payload.title,
         description=payload.description,
@@ -92,12 +125,12 @@ def create_task(
 @router.get("/{task_id}", response_model=TaskResponse)
 def get_task(
     task_id: int,
-    service: TaskService = Depends(get_task_service),
+    task_service: TaskService = Depends(get_task_service),
 ):
     """
     Retrieve a single task by its ID.
     """
-    task = service.get_task(task_id)
+    task = task_service.get_task(task_id)
     if task is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -110,13 +143,13 @@ def get_task(
 def update_task(
     task_id: int,
     payload: TaskUpdateRequest,
-    service: TaskService = Depends(get_task_service),
+    task_service: TaskService = Depends(get_task_service),
 ):
     """
     Partially update an existing task.
     All fields in the payload are optional; only provided fields will be updated.
     """
-    task = service.edit_task(
+    task = task_service.edit_task(
         task_id=task_id,
         title=payload.title,
         description=payload.description,
@@ -136,12 +169,12 @@ def update_task(
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(
     task_id: int,
-    service: TaskService = Depends(get_task_service),
+    task_service: TaskService = Depends(get_task_service),
 ):
     """
     Delete a task by ID.
     """
-    success = service.delete_task(task_id)
+    success = task_service.delete_task(task_id)
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
