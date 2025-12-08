@@ -10,8 +10,8 @@ class Task(Base):
     __tablename__ = "tasks"
 
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String(255), nullable=False)
-    description = Column(String(255), nullable=True)
+    title = Column(String(30), nullable=False)
+    description = Column(String(150), nullable=True)
     status = Column(String(20), default="todo", nullable=False)
 
     # Optional deadline: can be NULL
