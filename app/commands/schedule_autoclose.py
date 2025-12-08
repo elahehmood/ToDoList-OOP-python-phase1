@@ -24,7 +24,7 @@ def main() -> None:
     """
 
     # Dev mode: every minute (easy to test)
-    schedule.every().minute.do(run_job)
+    schedule.every(1).minute.do(run_job)
 
     # Production style (example):
     # schedule.every().day.at("02:00").do(run_job)
